@@ -5,7 +5,6 @@ class StockInfoRequest(BaseModel):
 
 
 class StockInfoResponse(BaseModel):
-    api_res: int
-    code: int
+    code: str
     name: str
     market: str

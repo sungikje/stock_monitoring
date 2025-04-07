@@ -1,24 +1,28 @@
+# Lib import
+from fastapi import HTTPException
 import FinanceDataReader as fdr
+from typing import List
 
+# Project import
 from backend.models.stock import StockInfoResponse
 
 
-def search_company(name: str) -> StockInfoResponse:
+def search_company(name: str) -> List[StockInfoResponse]:
 
-  krx_stocks = fdr.StockListing('KRX')
-  company_info = krx_stocks[krx_stocks['Name'] == name]
+	krx_stocks = fdr.StockListing('KRX')
+	company_info = krx_stocks[krx_stocks['Name'].str.contains(name, case=False, na=False)]
 
-  if company_info.empty:
-      return StockInfoResponse(
-          api_res=1,
-          code=None,
-          name=None,
-          market=None
-      )
+	if company_info.empty:
+		print('error')
+		raise HTTPException(status_code=404, detail="Company not found")
 
-  return StockInfoResponse(
-        api_res=0,
-        code=company_info['Code'].values[0],
-        name=company_info['Name'].values[0],
-        market=company_info['Market'].values[0]
-    )
+	result = [
+		StockInfoResponse(
+			code=row['Code'],
+			name=row['Name'],
+			market=row['Market']
+		)
+		for _, row in company_info.iterrows()
+	]
+
+	return result
