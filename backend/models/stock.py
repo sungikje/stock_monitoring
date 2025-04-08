@@ -18,6 +18,10 @@ class SearchFavoriteCompany(BaseModel):
     base_price: int
     created_at: datetime
 
+class CreateFavoriteCompany(BaseModel):
+    user_id: str
+    company_name: str
+
 class DeleteFavoriteCompany(BaseModel):
-    id: str
+    user_id: str
     company_name: str

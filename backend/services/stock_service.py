@@ -8,7 +8,7 @@ import aiomysql
 from backend.db.connection import get_pool
 from backend.models.user import UserSearch
 from backend.services.user_service import find_user_by_email
-from backend.models.stock import StockInfoResponse, SearchFavoriteCompany, DeleteFavoriteCompany
+from backend.models.stock import StockInfoResponse, SearchFavoriteCompany, CreateFavoriteCompany, DeleteFavoriteCompany
 
 
 def search_company(name: str) -> List[StockInfoResponse]:
@@ -54,7 +54,7 @@ async def delete_company(delete_info: DeleteFavoriteCompany):
         async with conn.cursor(aiomysql.DictCursor) as cur:
             await cur.execute(
                 "SELECT * FROM user_favorite_companies WHERE user_id = %s AND company_name = %s", 
-                (delete_info.id, delete_info.company_name)
+                (delete_info.user_id, delete_info.company_name)
             )
             
             delete_tf = await cur.fetchall()
@@ -63,7 +63,27 @@ async def delete_company(delete_info: DeleteFavoriteCompany):
 
             await cur.execute(
                 "DELETE FROM user_favorite_companies WHERE user_id = %s AND company_name = %s", 
-                (delete_info.id, delete_info.company_name)
+                (delete_info.user_id, delete_info.company_name)
+            )
+            await conn.commit()
+            return {"result": "success"}
+
+async def create_favorite_company(create_info: CreateFavoriteCompany):
+     pool = get_pool()
+     async with pool.acquire() as conn:
+        async with conn.cursor(aiomysql.DictCursor) as cur:
+            await cur.execute(
+                "SELECT * FROM user_favorite_companies WHERE user_id = %s AND company_name = %s", 
+                (create_info.user_id, create_info.company_name)
+            )
+            
+            delete_tf = await cur.fetchall()
+            if delete_tf:
+                return {"error": "error", "message": "already exist company list"}
+
+            await cur.execute(
+                "INSERT INTO user_favorite_companies (user_id, company_name, industry_period, base_price) VALUES (%s, %s, 2, 50000)", 
+                (create_info.user_id, create_info.company_name)
             )
             await conn.commit()
             return {"result": "success"}
