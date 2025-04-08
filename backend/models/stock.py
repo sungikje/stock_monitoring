@@ -10,10 +10,14 @@ class StockInfoResponse(BaseModel):
     name: str
     market: str
 
-class FavoriteCompany(BaseModel):
+class SearchFavoriteCompany(BaseModel):
     id: int
     user_id: int
     company_name: str
     industry_period: int
     base_price: int
     created_at: datetime
+
+class DeleteFavoriteCompany(BaseModel):
+    id: str
+    company_name: str
