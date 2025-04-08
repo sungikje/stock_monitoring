@@ -3,7 +3,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.api.endpoints import stock_endpoint  # 직접 만든 엔드포인트 import
+from backend.api.endpoints import stock_endpoint, user_endpoint 
+from backend.db.connection import connect_to_mysql, disconnect_from_mysql
 
 app = FastAPI(
     title="Stock Analysis API",
@@ -21,6 +22,15 @@ app.add_middleware(
 )
 
 app.include_router(stock_endpoint.router, prefix="/api")
+app.include_router(user_endpoint.router, prefix="/api")
+
+@app.on_event("startup")
+async def startup():
+    await connect_to_mysql(app)
+
+@app.on_event("shutdown")
+async def shutdown():
+    await disconnect_from_mysql(app)
 
 @app.get("/")
 def root():
