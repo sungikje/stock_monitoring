@@ -131,7 +131,7 @@ def view_chart(user_id, company_code, company_name):
     plt.figure(figsize=(14, 7))
     
     # 실제 주가는 실선, SMA는 점선으로 표시
-            return {"result": "success"}    plt.plot(df.index, df['Close'], label='Daily Closing Price', color='dodgerblue', alpha=0.6, linewidth=2)
+    plt.plot(df.index, df['Close'], label='Daily Closing Price', color='dodgerblue', alpha=0.6, linewidth=2)
     plt.plot(df.index, df['SMA_30'], label='30-Day SMA', color='red', linestyle='--', alpha=0.9)
     plt.plot(df.index, df['SMA_50'], label='50-Day SMA', color='limegreen', linestyle='--', alpha=0.9)
     plt.plot(df.index, df['SMA_200'], label='200-Day SMA', color='orange', linestyle='--', alpha=0.9)
