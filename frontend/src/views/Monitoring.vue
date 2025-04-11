@@ -28,9 +28,24 @@ export default {
   data() {
     return {
       companies: [
-        { id: 1, name: "삼성전자", latestPrice: 75000, history: [72000, 73000, 74000, 75000] },
-        { id: 2, name: "현대자동차", latestPrice: 205000, history: [200000, 202000, 204000, 205000] },
-        { id: 3, name: "네이버", latestPrice: 380000, history: [375000, 376000, 378000, 380000] },
+        {
+          id: 1,
+          name: "삼성전자",
+          latestPrice: 75000,
+          history: [72000, 73000, 74000, 75000],
+        },
+        {
+          id: 2,
+          name: "현대자동차",
+          latestPrice: 205000,
+          history: [200000, 202000, 204000, 205000],
+        },
+        {
+          id: 3,
+          name: "네이버",
+          latestPrice: 380000,
+          history: [375000, 376000, 378000, 380000],
+        },
       ],
     };
   },

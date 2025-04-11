@@ -56,10 +56,10 @@
         </tr> -->
         <tr>
           <td><input type="checkbox" /></td>
-          <td> 2 </td>
-          <td> 123 </td>
-          <td> 대우 전자 </td>
-          <td> 1972.01.11 </td>
+          <td>2</td>
+          <td>123</td>
+          <td>대우 전자</td>
+          <td>1972.01.11</td>
         </tr>
       </tbody>
     </table>
@@ -72,8 +72,18 @@ export default {
     return {
       searchQuery: "",
       companies: [
-        { id: 1, uniqueCode: "ABC123", name: "삼성전자", addedDate: "2024-04-01" },
-        { id: 2, uniqueCode: "XYZ789", name: "현대자동차", addedDate: "2024-04-02" },
+        {
+          id: 1,
+          uniqueCode: "ABC123",
+          name: "삼성전자",
+          addedDate: "2024-04-01",
+        },
+        {
+          id: 2,
+          uniqueCode: "XYZ789",
+          name: "현대자동차",
+          addedDate: "2024-04-02",
+        },
       ],
       searchResults: [],
       selectedResults: [],
@@ -82,7 +92,7 @@ export default {
   methods: {
     searchCompany() {
       this.searchResults = this.companies.filter((c) =>
-        c.name.includes(this.searchQuery)
+        c.name.includes(this.searchQuery),
       );
     },
     addCompany() {
@@ -111,7 +121,8 @@ table {
   margin-bottom: 20px;
 }
 
-th, td {
+th,
+td {
   border: 1px solid #ddd;
   padding: 10px;
   text-align: center;

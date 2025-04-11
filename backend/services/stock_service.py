@@ -12,36 +12,42 @@ from datetime import datetime, timedelta
 from backend.db.connection import get_pool
 from backend.models.user import UserSearchUseEmail
 from backend.services.user_service import find_user_by_email, user_email_to_id
-from backend.models.stock import StockInfoResponse, SearchFavoriteCompany, CreateFavoriteCompany, DeleteFavoriteCompany
+from backend.models.stock import (
+    StockInfoResponse,
+    SearchFavoriteCompany,
+    CreateFavoriteCompany,
+    DeleteFavoriteCompany,
+)
 
 
 def search_company(name: str) -> List[StockInfoResponse]:
-	krx_stocks = fdr.StockListing('KRX')
-	company_info = krx_stocks[krx_stocks['Name'].str.contains(name, case=False, na=False)]
+    krx_stocks = fdr.StockListing("KRX")
+    company_info = krx_stocks[
+        krx_stocks["Name"].str.contains(name, case=False, na=False)
+    ]
 
-	if company_info.empty:
-		return {"status": "error", "message": "company not found"}
+    if company_info.empty:
+        return {"status": "error", "message": "company not found"}
 
-	result = [
-		StockInfoResponse(
-			code=row['Code'],
-			name=row['Name'],
-			market=row['Market']
-		)
-		for _, row in company_info.iterrows()
-	]
+    result = [
+        StockInfoResponse(code=row["Code"], name=row["Name"], market=row["Market"])
+        for _, row in company_info.iterrows()
+    ]
 
-	return result
+    return result
 
 
-async def search_user_favorite_company(user: UserSearchUseEmail) -> List[SearchFavoriteCompany]:
+async def search_user_favorite_company(
+    user: UserSearchUseEmail,
+) -> List[SearchFavoriteCompany]:
     pool = get_pool()
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
             user_response = await find_user_by_email(user)
 
-            await cur.execute("SELECT * FROM user_favorite_companies WHERE user_id = %s", 
-                (user_response.id,)
+            await cur.execute(
+                "SELECT * FROM user_favorite_companies WHERE user_id = %s",
+                (user_response.id,),
             )
             favorite_rows = await cur.fetchall()
 
@@ -55,21 +61,20 @@ async def delete_favorite_company(delete_info: DeleteFavoriteCompany):
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
             await cur.execute(
-                "SELECT * FROM user_favorite_companies WHERE user_id = %s AND company_name = %s", 
-                (delete_info.user_id, delete_info.company_name)
+                "SELECT * FROM user_favorite_companies WHERE user_id = %s AND company_name = %s",
+                (delete_info.user_id, delete_info.company_name),
             )
-            
+
             delete_tf = await cur.fetchall()
             if not delete_tf:
                 return {"status": "error", "message": "fail find favorite company"}
 
             await cur.execute(
-                "DELETE FROM user_favorite_companies WHERE user_id = %s AND company_name = %s", 
-                (delete_info.user_id, delete_info.company_name)
+                "DELETE FROM user_favorite_companies WHERE user_id = %s AND company_name = %s",
+                (delete_info.user_id, delete_info.company_name),
             )
             await conn.commit()
             return {"status": "success"}
-
 
 
 async def create_favorite_company(create_info: CreateFavoriteCompany):
@@ -77,23 +82,25 @@ async def create_favorite_company(create_info: CreateFavoriteCompany):
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
             await cur.execute(
-                "SELECT * FROM user_favorite_companies WHERE user_id = %s AND company_name = %s", 
-                (create_info.user_id, create_info.company_name)
+                "SELECT * FROM user_favorite_companies WHERE user_id = %s AND company_name = %s",
+                (create_info.user_id, create_info.company_name),
             )
-            
+
             delete_tf = await cur.fetchall()
             if delete_tf:
                 return {"status": "error", "message": "already exist company list"}
 
             await cur.execute(
-                "INSERT INTO user_favorite_companies (user_id, company_name, industry_peridatetimeod, base_price) VALUES (%s, %s, 2, 50000)", 
-                (create_info.user_id, create_info.company_name)
+                "INSERT INTO user_favorite_companies (user_id, company_name, industry_peridatetimeod, base_price) VALUES (%s, %s, 2, 50000)",
+                (create_info.user_id, create_info.company_name),
             )
             await conn.commit()
             return {"status": "success"}
-        
+
+
 async def stock_monitoring(user: UserSearchUseEmail):
     await find_user_favorite_company_stock_info(user)
+
 
 async def find_user_favorite_company_stock_info(user: UserSearchUseEmail):
     user_favorite_company_list = await search_user_favorite_company(user)
@@ -107,38 +114,74 @@ async def find_user_favorite_company_stock_info(user: UserSearchUseEmail):
     for company in user_favorite_company_stock_info_list:
         print(company)
         view_chart(user_id, company.code, company.name)
-        
+
 
 def view_chart(user_id, company_code, company_name):
-    today = datetime.today().strftime('%Y-%m-%d')
-    two_year_ago = (datetime.today() - timedelta(days=730)).strftime('%Y-%m-%d')
+    today = datetime.today().strftime("%Y-%m-%d")
+    two_year_ago = (datetime.today() - timedelta(days=730)).strftime("%Y-%m-%d")
 
     # 주식 데이터 가져오기
     df = fdr.DataReader(company_code, start=two_year_ago, end=today)
 
     # 이동 평균선 계산
-    df['SMA_30'] = df['Close'].rolling(window=30).mean()
-    df['SMA_50'] = df['Close'].rolling(window=50).mean()
-    df['SMA_200'] = df['Close'].rolling(window=200).mean()
+    df["SMA_30"] = df["Close"].rolling(window=30).mean()
+    df["SMA_50"] = df["Close"].rolling(window=50).mean()
+    df["SMA_200"] = df["Close"].rolling(window=200).mean()
 
     # 데드 크로스 여부 (50일선 < 200일선)
-    df['Dead_Cross'] = (df['SMA_50'] < df['SMA_200'])
-    
+    df["Dead_Cross"] = df["SMA_50"] < df["SMA_200"]
+
     # 오늘자(최신 날짜) 데드 크로스 여부 확인
-    today_dead_cross = df['Dead_Cross'].iloc[-1]
+    today_dead_cross = df["Dead_Cross"].iloc[-1]
 
     # 그래프 시각화
     plt.figure(figsize=(14, 7))
-    
+
     # 실제 주가는 실선, SMA는 점선으로 표시
-    plt.plot(df.index, df['Close'], label='Daily Closing Price', color='dodgerblue', alpha=0.6, linewidth=2)
-    plt.plot(df.index, df['SMA_30'], label='30-Day SMA', color='red', linestyle='--', alpha=0.9)
-    plt.plot(df.index, df['SMA_50'], label='50-Day SMA', color='limegreen', linestyle='--', alpha=0.9)
-    plt.plot(df.index, df['SMA_200'], label='200-Day SMA', color='orange', linestyle='--', alpha=0.9)
+    plt.plot(
+        df.index,
+        df["Close"],
+        label="Daily Closing Price",
+        color="dodgerblue",
+        alpha=0.6,
+        linewidth=2,
+    )
+    plt.plot(
+        df.index,
+        df["SMA_30"],
+        label="30-Day SMA",
+        color="red",
+        linestyle="--",
+        alpha=0.9,
+    )
+    plt.plot(
+        df.index,
+        df["SMA_50"],
+        label="50-Day SMA",
+        color="limegreen",
+        linestyle="--",
+        alpha=0.9,
+    )
+    plt.plot(
+        df.index,
+        df["SMA_200"],
+        label="200-Day SMA",
+        color="orange",
+        linestyle="--",
+        alpha=0.9,
+    )
 
     # 데드 크로스 포인트 색상 및 스타일 변경 (아이콘 크기 조정)
-    dead_cross_dates = df.index[df['Dead_Cross']]
-    plt.scatter(dead_cross_dates, df.loc[dead_cross_dates, 'Close'], color='crimson', marker='v', label='Dead Cross', alpha=1, s=25)
+    dead_cross_dates = df.index[df["Dead_Cross"]]
+    plt.scatter(
+        dead_cross_dates,
+        df.loc[dead_cross_dates, "Close"],
+        color="crimson",
+        marker="v",
+        label="Dead Cross",
+        alpha=1,
+        s=25,
+    )
 
     # 최신 날짜 데드 크로스 여부 출력
     if today_dead_cross:
@@ -148,19 +191,24 @@ def view_chart(user_id, company_code, company_name):
 
     # 그래프 세부 설정
     plt.xticks(df.index[::14], rotation=45)
-    plt.yticks(np.arange(df['Close'].min(), df['Close'].max() + (df['Close'].max() * 0.05), df['Close'].max() * 0.05))
-    plt.xlabel('Date')
-    plt.ylabel('Closing Price (KRW)')
+    plt.yticks(
+        np.arange(
+            df["Close"].min(),
+            df["Close"].max() + (df["Close"].max() * 0.05),
+            df["Close"].max() * 0.05,
+        )
+    )
+    plt.xlabel("Date")
+    plt.ylabel("Closing Price (KRW)")
     plt.legend()
     plt.grid(True)
 
-
     # 그래프 저장
-    output_dir = f'../stock_chart/{user_id}'  
+    output_dir = f"../stock_chart/{user_id}"
     os.makedirs(output_dir, exist_ok=True)
 
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # backend/
-    output_dir = os.path.join(BASE_DIR, 'stock_chart', str(user_id), str(today))
+    output_dir = os.path.join(BASE_DIR, "stock_chart", str(user_id), str(today))
     os.makedirs(output_dir, exist_ok=True)
     save_path = os.path.join(output_dir, f"{company_name}.png")
 

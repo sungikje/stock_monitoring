@@ -1,7 +1,12 @@
 # virtual env
 venv/*
 
+# info
 *detail.txt
+.env
+
+# about py
 *cache*
 
+# chart table
 stock_chart

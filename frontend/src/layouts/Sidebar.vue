@@ -66,8 +66,8 @@ export default {
   text-align: center;
   height: 93px;
   display: flex;
-  flex-direction: column;  /* ✅ 위-아래로 정렬 */
-  align-items: center;     /* ✅ 세로 중앙 정렬 */
+  flex-direction: column; /* ✅ 위-아래로 정렬 */
+  align-items: center; /* ✅ 세로 중앙 정렬 */
   justify-content: center; /* ✅ 가로 중앙 정렬 */
   background: rgba(255, 255, 255, 0.2);
   border-bottom: 1px solid rgba(255, 255, 255, 0.3);
@@ -101,7 +101,9 @@ export default {
   font-weight: bold;
   text-decoration: none;
   display: block;
-  transition: background 0.3s, transform 0.2s;
+  transition:
+    background 0.3s,
+    transform 0.2s;
 }
 
 .menu a:hover {

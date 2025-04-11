@@ -6,6 +6,7 @@ from datetime import datetime
 class UserSearchUseEmail(BaseModel):
     email: str
 
+
 # 유저 생성용 요청 모델
 class UserCreateInfo(BaseModel):
     username: str
@@ -19,6 +20,7 @@ class UserCreateInfo(BaseModel):
 class UserLoginInfo(BaseModel):
     email: str
     password: str
+
 
 # 유저 조회 응답용 모델
 class UserResponse(BaseModel):

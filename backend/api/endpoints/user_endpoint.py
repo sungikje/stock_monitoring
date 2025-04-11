@@ -12,6 +12,7 @@ router = APIRouter()
 async def api_user_join_membership(user_info: UserCreateInfo):
     return await user_join_membership(user_info)
 
+
 @router.post("/user_login")
 async def api_user_login(login_info: UserLoginInfo):
     return await user_login(login_info)

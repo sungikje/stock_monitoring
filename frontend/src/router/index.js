@@ -15,7 +15,11 @@ const routes = [
     path: "/main",
     component: MainLayout, // 🚀 헤더 + 사이드바 포함된 레이아웃
     children: [
-      { path: "edit-companies", name: "EditCompanies", component: EditCompanies },
+      {
+        path: "edit-companies",
+        name: "EditCompanies",
+        component: EditCompanies,
+      },
       { path: "monitoring", name: "Monitoring", component: Monitoring },
     ],
   },
