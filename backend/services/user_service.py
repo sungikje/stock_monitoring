@@ -13,11 +13,11 @@ from backend.models.user import (
 from backend.utils.jwt import create_access_token
 
 
-async def find_user_by_email(user: UserSearchUseEmail) -> UserResponse:
+async def find_user_by_email(user_email: str) -> UserResponse:
     pool = get_pool()
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
-            await cur.execute("SELECT * FROM users WHERE email = %s", (user.email,))
+            await cur.execute("SELECT * FROM users WHERE email = %s", (user_email,))
             user_row = await cur.fetchone()
 
             if not user_row:

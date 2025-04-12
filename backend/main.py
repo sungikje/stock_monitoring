@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.endpoints import stock_endpoint, user_endpoint
 from backend.db.connection import connect_to_mysql, disconnect_from_mysql
+from backend.middlewares import TokenMiddleware
 
 app = FastAPI(
     title="Stock Analysis API",
@@ -20,6 +21,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(TokenMiddleware)
 
 app.include_router(stock_endpoint.router, prefix="/api")
 app.include_router(user_endpoint.router, prefix="/api")

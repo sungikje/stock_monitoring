@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-
+from typing import List
 
 class StockInfoRequest(BaseModel):
     name: str
@@ -21,10 +21,15 @@ class SearchFavoriteCompany(BaseModel):
     created_at: datetime
 
 
-class CreateFavoriteCompany(BaseModel):
-    user_id: str
+class SearchCompany(BaseModel):
     company_name: str
 
+
+class CreateFavoriteCompany(BaseModel):
+    company_name: str
+
+class CreateFavoriteCompanyList(BaseModel):
+    company_list: List[CreateFavoriteCompany]
 
 class DeleteFavoriteCompany(BaseModel):
     user_id: str

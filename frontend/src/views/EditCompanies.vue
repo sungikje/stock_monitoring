@@ -2,64 +2,56 @@
   <div class="edit-companies">
     <h1>📋 관심 회사 목록</h1>
 
+    <p v-if="favoriteCompanies.length === 0">관심 회사가 없습니다.</p>
     <!-- 관심 회사 테이블 -->
-    <table class="company-table">
+    <table v-else class="company-table">
       <thead>
         <tr>
-          <th>ID</th>
-          <th>Unique Code</th>
+            <th>Index</th>
           <th>회사명</th>
           <th>추가 일자</th>
           <th>관리</th>
         </tr>
       </thead>
-      <tbody>
-        <tr v-for="company in companies" :key="company.id">
-          <td>{{ company.id }}</td>
-          <td>{{ company.uniqueCode }}</td>
-          <td>{{ company.name }}</td>
-          <td>{{ company.addedDate }}</td>
+      <tbody v-if="favoriteCompanies.length != 0">
+        <tr v-for="(company, index) in favoriteCompanies" :key="index">
+          <td>{{ index }}</td>
+          <td>{{ company.company_name }}</td>
+          <td>{{ filter_date(company.created_at) }}</td>
           <td>
             <button @click="editCompany(company)">✏ 수정</button>
-            <button @click="deleteCompany(company.id)">🗑 삭제</button>
+            <button @click="deleteCompany(company.uniqueCode)">🗑 삭제</button>
           </td>
         </tr>
       </tbody>
     </table>
 
     <!-- 검색 기능 -->
+    <br><br><br>
+    <h1>📋 관심 회사 검색</h1>
     <div class="search-section">
-      <input v-model="searchQuery" type="text" placeholder="회사명 검색" />
-      <button @click="searchCompany">🔍 검색</button>
-      <button @click="addCompany">➕ 추가</button>
+      <input v-model="companyName" type="text" placeholder="회사명 검색" />
+      <button type="" @click="searchCompany">🔍 검색</button>
+      <button type="" @click="addCompany">➕ 추가</button>
     </div>
 
     <!-- 검색 결과 테이블 -->
-    <!-- <table class="search-table" v-if="searchResults.length > 0"> -->
-    <table class="search-table">
+    <p v-if="searchResults.length === 0">관심 회사가 없습니다.</p>
+    <table v-else class="search-table">
       <thead>
         <tr>
           <th>✔</th>
-          <th>ID</th>
+          <th>Code</th>
           <th>Unique Code</th>
           <th>회사명</th>
-          <th>추가 일자</th>
         </tr>
       </thead>
       <tbody>
-        <!-- <tr v-for="result in searchResults" :key="result.id">
-          <td><input type="checkbox" v-model="selectedResults" :value="result.id" /></td>
-          <td>{{ result.id }}</td>
-          <td>{{ result.uniqueCode }}</td>
+        <tr v-for="result in searchResults" :key="result.code">
+          <td><input type="checkbox" v-model="selectedResults" :value="result.name" /></td>
+          <td>{{ result.code }}</td>
+          <td>{{ result.market }}</td>
           <td>{{ result.name }}</td>
-          <td>{{ result.addedDate }}</td>
-        </tr> -->
-        <tr>
-          <td><input type="checkbox" /></td>
-          <td>2</td>
-          <td>123</td>
-          <td>대우 전자</td>
-          <td>1972.01.11</td>
         </tr>
       </tbody>
     </table>
@@ -67,36 +59,77 @@
 </template>
 
 <script>
+import axios from "axios";
 export default {
   data() {
     return {
-      searchQuery: "",
-      companies: [
-        {
-          id: 1,
-          uniqueCode: "ABC123",
-          name: "삼성전자",
-          addedDate: "2024-04-01",
-        },
-        {
-          id: 2,
-          uniqueCode: "XYZ789",
-          name: "현대자동차",
-          addedDate: "2024-04-02",
-        },
-      ],
+        companyName: "",
+      companies: [],
+      favoriteCompanies: [],
       searchResults: [],
       selectedResults: [],
     };
   },
   methods: {
-    searchCompany() {
-      this.searchResults = this.companies.filter((c) =>
-        c.name.includes(this.searchQuery),
-      );
+    async searchCompany() {
+        try {
+            const access_token = localStorage.getItem("access_token");
+            const res = await axios.post(
+                "http://localhost:8000/api/search_company",
+                { company_name: this.companyName },
+                {
+                    headers: {
+                        Authorization: `Bearer ${access_token}`,
+                    },
+                });
+            this.searchResults = res.data;
+        } catch (error) {
+            console.error('Request failed:', error);
+            this.errorMessage = error.message || "Request failed";
+        }
     },
-    addCompany() {
-      console.log("추가 버튼 클릭됨!");
+
+    async searchFavoriteCompany() {
+      try {
+        const access_token = localStorage.getItem("access_token");
+        const res = await axios.post(
+            "http://localhost:8000/api/search_favorite_company",
+            {}, 
+            {
+                headers: {
+                    Authorization: `Bearer ${access_token}`,
+                },
+        });
+        this.favoriteCompanies = res.data;
+      } catch (error) {
+        console.error('Request failed:', error);
+        this.errorMessage = error.message || "Request failed";
+      }
+    },
+
+    async addCompany() {
+        const payload = {
+        company_list: this.selectedResults.map(name => ({
+            company_name: name
+            }))
+        };
+        
+        try {
+            const access_token = localStorage.getItem("access_token");
+            const res = await axios.post(
+                "http://localhost:8000/api/create_favorite_company",
+                payload, 
+                {
+                    headers: {
+                        Authorization: `Bearer ${access_token}`,
+                    },
+            });
+            this.favoriteCompanies = res.data;
+            this.$router.go(0);
+        } catch (error) {
+            console.error('Request failed:', error);
+            this.errorMessage = error.message || "Request failed";
+      }
     },
     editCompany(company) {
       console.log("수정:", company);
@@ -105,6 +138,21 @@ export default {
       console.log("삭제:", id);
       this.companies = this.companies.filter((c) => c.id !== id);
     },
+
+    filter_date(dateString) {
+        const date = new Date(dateString);
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1; // 0부터 시작하므로 +1
+        const day = date.getDate();
+
+        return `${year}년 ${month}월 ${day}일`;
+    }
+  },
+
+  beforeRouteEnter(to, from, next) {
+    next((vm) => {
+      vm.searchFavoriteCompany();
+    });
   },
 };
 </script>

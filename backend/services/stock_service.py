@@ -16,7 +16,7 @@ from backend.models.stock import (
     StockInfoResponse,
     SearchFavoriteCompany,
     CreateFavoriteCompany,
-    DeleteFavoriteCompany,
+    DeleteFavoriteCompany
 )
 
 
@@ -38,12 +38,12 @@ def search_company(name: str) -> List[StockInfoResponse]:
 
 
 async def search_user_favorite_company(
-    user: UserSearchUseEmail,
+    user_email: str,
 ) -> List[SearchFavoriteCompany]:
     pool = get_pool()
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
-            user_response = await find_user_by_email(user)
+            user_response = await find_user_by_email(user_email)
 
             await cur.execute(
                 "SELECT * FROM user_favorite_companies WHERE user_id = %s",
@@ -77,23 +77,24 @@ async def delete_favorite_company(delete_info: DeleteFavoriteCompany):
             return {"status": "success"}
 
 
-async def create_favorite_company(create_info: CreateFavoriteCompany):
+async def create_favorite_company(user_id: str, create_info: List[CreateFavoriteCompany]):
     pool = get_pool()
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
-            await cur.execute(
-                "SELECT * FROM user_favorite_companies WHERE user_id = %s AND company_name = %s",
-                (create_info.user_id, create_info.company_name),
-            )
+            for i in create_info:
+                await cur.execute(
+                    "SELECT * FROM user_favorite_companies WHERE user_id = %s AND company_name = %s",
+                    (user_id, i.company_name),
+                )
 
-            delete_tf = await cur.fetchall()
-            if delete_tf:
-                return {"status": "error", "message": "already exist company list"}
+                delete_tf = await cur.fetchall()
+                if delete_tf:
+                    return {"status": "error", "message": "already exist company list"}
 
-            await cur.execute(
-                "INSERT INTO user_favorite_companies (user_id, company_name, industry_peridatetimeod, base_price) VALUES (%s, %s, 2, 50000)",
-                (create_info.user_id, create_info.company_name),
-            )
+                await cur.execute(
+                    "INSERT INTO user_favorite_companies (user_id, company_name, industry_period, base_price) VALUES (%s, %s, 2, 50000)",
+                    (user_id, i.company_name),
+                )
             await conn.commit()
             return {"status": "success"}
 
