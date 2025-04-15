@@ -34,3 +34,8 @@ class CreateFavoriteCompanyList(BaseModel):
 class DeleteFavoriteCompany(BaseModel):
     user_id: str
     company_name: str
+
+
+class ViewChart(BaseModel):
+    company_name: str
+    save_path: str

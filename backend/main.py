@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from backend.api.endpoints import stock_endpoint, user_endpoint
 from backend.db.connection import connect_to_mysql, disconnect_from_mysql
@@ -26,6 +27,7 @@ app.add_middleware(TokenMiddleware)
 app.include_router(stock_endpoint.router, prefix="/api")
 app.include_router(user_endpoint.router, prefix="/api")
 
+app.mount("/static", StaticFiles(directory="backend/stock_chart"), name="static")
 
 @app.on_event("startup")
 async def startup():

@@ -7,6 +7,7 @@ import numpy as np
 import FinanceDataReader as fdr
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
+from fastapi.responses import FileResponse
 
 # Project import
 from backend.db.connection import get_pool
@@ -16,7 +17,8 @@ from backend.models.stock import (
     StockInfoResponse,
     SearchFavoriteCompany,
     CreateFavoriteCompany,
-    DeleteFavoriteCompany
+    DeleteFavoriteCompany,
+    ViewChart
 )
 
 
@@ -99,25 +101,33 @@ async def create_favorite_company(user_id: str, create_info: List[CreateFavorite
             return {"status": "success"}
 
 
-async def stock_monitoring(user: UserSearchUseEmail):
-    await find_user_favorite_company_stock_info(user)
+async def stock_monitoring(user_email: UserSearchUseEmail) -> List[ViewChart]:
+    viewChartLists = await find_user_favorite_company_stock_info(user_email)
+
+    if viewChartLists != []:
+        return viewChartLists
+    else:
+        return {"status": "error", "message": "no chart for user"}
 
 
-async def find_user_favorite_company_stock_info(user: UserSearchUseEmail):
-    user_favorite_company_list = await search_user_favorite_company(user)
-    user_id = await user_email_to_id(user)
+async def find_user_favorite_company_stock_info(user_email: UserSearchUseEmail) -> List[ViewChart]:
+    user_favorite_company_list = await search_user_favorite_company(user_email)
+    user_id = await user_email_to_id(user_email)
     user_favorite_company_stock_info_list = []
+    view_charts = []
 
     for company in user_favorite_company_list:
         for idx in search_company(company.company_name):
             user_favorite_company_stock_info_list.append(idx)
 
     for company in user_favorite_company_stock_info_list:
-        print(company)
-        view_chart(user_id, company.code, company.name)
+        temp = view_chart(user_id, company.code, company.name)
+        if temp != "":
+            view_charts.append(temp)
 
+    return view_charts
 
-def view_chart(user_id, company_code, company_name):
+def view_chart(user_id, company_code, company_name) -> ViewChart:
     today = datetime.today().strftime("%Y-%m-%d")
     two_year_ago = (datetime.today() - timedelta(days=730)).strftime("%Y-%m-%d")
 
@@ -186,9 +196,9 @@ def view_chart(user_id, company_code, company_name):
 
     # 최신 날짜 데드 크로스 여부 출력
     if today_dead_cross:
-        plt.title(f"{company_name} - Dead Cross O")
+        plt.title(f"{company_code} - Dead Cross O")
     else:
-        plt.title(f"{company_name} - Dead Cross X")
+        plt.title(f"{company_code} - Dead Cross X")
 
     # 그래프 세부 설정
     plt.xticks(df.index[::14], rotation=45)
@@ -216,7 +226,14 @@ def view_chart(user_id, company_code, company_name):
     plt.savefig(save_path)
     plt.close()
 
+    static_path = '/' + str(user_id) + '/' + str(today) + '/' + f"{company_name}.png"
+
     if os.path.exists(save_path):
         print(f"✅ 그래프 저장 완료: {save_path}")
+        return ViewChart(
+            company_name=company_name,
+            save_path=static_path
+        )
     else:
         print(f"❌ 저장 실패: {save_path}")
+        return ""

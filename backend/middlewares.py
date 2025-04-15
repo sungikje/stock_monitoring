@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware  
 from backend.utils.jwt import decode_token
 
-EXCLUDE_PATHS = ["/api/login", "/api/signup"]
+EXCLUDE_PREFIXES = ["/api/login", "/api/signup", "/static"]
 
 class TokenMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -14,8 +14,9 @@ class TokenMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS":
             return await call_next(request)
 
-        if request.url.path in EXCLUDE_PATHS:
-            return await call_next(request)
+        for path in EXCLUDE_PREFIXES:
+            if request.url.path.startswith(path):
+                return await call_next(request)
 
         token = request.headers.get("Authorization")
         if token:

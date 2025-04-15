@@ -27,11 +27,11 @@ async def find_user_by_email(user_email: str) -> UserResponse:
     return user_response
 
 
-async def user_email_to_id(user: UserSearchUseEmail) -> str:
+async def user_email_to_id(user_email: str) -> str:
     pool = get_pool()
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
-            await cur.execute("SELECT * FROM users WHERE email = %s", (user.email,))
+            await cur.execute("SELECT * FROM users WHERE email = %s", (user_email,))
             user_row = await cur.fetchone()
 
             if not user_row:
