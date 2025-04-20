@@ -32,7 +32,6 @@ export default {
                     },
             });
             this.stockCharts = res.data;
-            console.log(this.stockCharts)
       } catch (error) {
             console.error('Request failed:', error);
             this.errorMessage = error.message || "Request failed";
