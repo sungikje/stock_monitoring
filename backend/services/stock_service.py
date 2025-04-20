@@ -1,13 +1,12 @@
 # Lib import
 import FinanceDataReader as fdr
-from typing import List
+from typing import List, Union
 import aiomysql
 import os
 import numpy as np
 import FinanceDataReader as fdr
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
-from fastapi.responses import FileResponse
 
 # Project import
 from backend.db.connection import get_pool
@@ -16,13 +15,12 @@ from backend.services.user_service import find_user_by_email, user_email_to_id
 from backend.models.stock import (
     StockInfoResponse,
     SearchFavoriteCompany,
-    CreateFavoriteCompany,
-    DeleteFavoriteCompany,
+    FavoriteCompanyInfo,
     ViewChart
 )
 
 
-def search_company(name: str) -> List[StockInfoResponse]:
+def search_company(name: str) -> Union[List[StockInfoResponse], dict]:
     krx_stocks = fdr.StockListing("KRX")
     company_info = krx_stocks[
         krx_stocks["Name"].str.contains(name, case=False, na=False)
@@ -30,6 +28,8 @@ def search_company(name: str) -> List[StockInfoResponse]:
 
     if company_info.empty:
         return {"status": "error", "message": "company not found"}
+
+    print(company_info)
 
     result = [
         StockInfoResponse(code=row["Code"], name=row["Name"], market=row["Market"])
@@ -58,13 +58,14 @@ async def search_user_favorite_company(
             return favorite_companies
 
 
-async def delete_favorite_company(delete_info: DeleteFavoriteCompany):
+async def delete_favorite_company(user_id: str, company_info: FavoriteCompanyInfo):
     pool = get_pool()
+    print(user_id, company_info.company_name)
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
             await cur.execute(
-                "SELECT * FROM user_favorite_companies WHERE user_id = %s AND company_name = %s",
-                (delete_info.user_id, delete_info.company_name),
+                "DELETE FROM user_favorite_companies WHERE user_id = %s AND company_name = %s",
+                (user_id, company_info.company_name),
             )
 
             delete_tf = await cur.fetchall()
@@ -73,13 +74,13 @@ async def delete_favorite_company(delete_info: DeleteFavoriteCompany):
 
             await cur.execute(
                 "DELETE FROM user_favorite_companies WHERE user_id = %s AND company_name = %s",
-                (delete_info.user_id, delete_info.company_name),
+                (user_id, company_info.company_name),
             )
             await conn.commit()
             return {"status": "success"}
 
 
-async def create_favorite_company(user_id: str, create_info: List[CreateFavoriteCompany]):
+async def create_favorite_company(user_id: str, create_info: List[FavoriteCompanyInfo]):
     pool = get_pool()
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
@@ -99,7 +100,7 @@ async def create_favorite_company(user_id: str, create_info: List[CreateFavorite
                 )
             await conn.commit()
             return {"status": "success"}
-
+ 
 
 async def stock_monitoring(user_email: UserSearchUseEmail) -> List[ViewChart]:
     viewChartLists = await find_user_favorite_company_stock_info(user_email)

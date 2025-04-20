@@ -25,11 +25,11 @@ class SearchCompany(BaseModel):
     company_name: str
 
 
-class CreateFavoriteCompany(BaseModel):
+class FavoriteCompanyInfo(BaseModel):
     company_name: str
 
 class CreateFavoriteCompanyList(BaseModel):
-    company_list: List[CreateFavoriteCompany]
+    company_list: List[FavoriteCompanyInfo]
 
 class DeleteFavoriteCompany(BaseModel):
     user_id: str

@@ -1,14 +1,12 @@
 # Lib import
 from fastapi import APIRouter
-from typing import List
+from typing import List, Union
 from fastapi import Request
-from fastapi.responses import FileResponse
 
 # Project import
 from backend.models.stock import (
     StockInfoResponse,
-    CreateFavoriteCompany,
-    DeleteFavoriteCompany,
+    FavoriteCompanyInfo
 )
 from backend.services.stock_service import (
     search_company,
@@ -25,7 +23,7 @@ router = APIRouter()
 
 
 @router.post("/search_company")
-def api_search_company(request: SearchCompany) -> List[StockInfoResponse]:
+def api_search_company(request: SearchCompany) -> Union[List[StockInfoResponse], dict]:
     return search_company(request.company_name)
 
 
@@ -44,9 +42,9 @@ async def api_create_favorite_company(request: Request, create_info: CreateFavor
 
 
 @router.post("/delete_favorite_company")
-async def api_delete_favorite_company(delete_info: DeleteFavoriteCompany):
-    return await delete_favorite_company(delete_info)
-
+async def api_delete_favorite_company(request: Request, company_info: FavoriteCompanyInfo):
+    user = request.state.user
+    return await delete_favorite_company(user['user_id'], company_info)
 
 @router.post("/stock_monitoring")
 async def api_stock_monitoring(request: Request) -> List[ViewChart]:

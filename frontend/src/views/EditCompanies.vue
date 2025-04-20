@@ -20,7 +20,7 @@
           <td>{{ filter_date(company.created_at) }}</td>
           <td>
             <button @click="editCompany(company)">✏ 수정</button>
-            <button @click="deleteCompany(company.uniqueCode)">🗑 삭제</button>
+            <button @click="deleteCompany(company.company_name)">🗑 삭제</button>
           </td>
         </tr>
       </tbody>
@@ -83,7 +83,11 @@ export default {
                         Authorization: `Bearer ${access_token}`,
                     },
                 });
-            this.searchResults = res.data;
+            if (res.data.status != "error") {
+                this.searchResults = res.data;
+            } else {
+                this.searchResults = []
+            }
         } catch (error) {
             console.error('Request failed:', error);
             this.errorMessage = error.message || "Request failed";
@@ -135,9 +139,25 @@ export default {
     editCompany(company) {
       console.log("수정:", company);
     },
-    deleteCompany(id) {
-      console.log("삭제:", id);
-      this.companies = this.companies.filter((c) => c.id !== id);
+    async deleteCompany(company_name) {
+        const payload = {
+            company_name: company_name
+        }
+        try {
+            const access_token = localStorage.getItem("access_token");
+            const res = await axios.post(
+                "http://localhost:8000/api/delete_favorite_company",
+                payload, 
+                {
+                    headers: {
+                        Authorization: `Bearer ${access_token}`,
+                    },
+            });
+            this.$router.go(0);
+        } catch (error) {
+            console.error('Request failed:', error);
+            this.errorMessage = error.message || "Request failed";
+      }
     },
 
     filter_date(dateString) {
