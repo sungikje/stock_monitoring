@@ -17,7 +17,7 @@ from backend.models.stock import (
     SearchFavoriteCompany,
     FavoriteCompanyInfo,
     UpdateIndustryInfo,
-    ViewChart
+    ViewChart,
 )
 
 
@@ -51,8 +51,9 @@ def search_company_not_use_contains(name: str) -> StockInfoResponse:
     return StockInfoResponse(
         code=company_info["Code"],
         name=company_info["Name"],
-        market=company_info["Market"]
+        market=company_info["Market"],
     )
+
 
 async def search_user_favorite_company(
     user_email: str,
@@ -115,7 +116,7 @@ async def create_favorite_company(user_id: str, create_info: List[FavoriteCompan
                 )
             await conn.commit()
             return {"status": "success"}
- 
+
 
 async def stock_monitoring(user_email: UserSearchUseEmail) -> List[ViewChart]:
     viewChartLists = await find_user_favorite_company_stock_info(user_email)
@@ -125,20 +126,29 @@ async def stock_monitoring(user_email: UserSearchUseEmail) -> List[ViewChart]:
     else:
         return {"status": "error", "message": "no chart for user"}
 
-async def update_favorite_company_industry_period(user_email: UserSearchUseEmail, update_info: UpdateIndustryInfo):
+
+async def update_favorite_company_industry_period(
+    user_email: UserSearchUseEmail, update_info: UpdateIndustryInfo
+):
     user_response = await find_user_by_email(user_email)
     pool = get_pool()
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
             await cur.execute(
                 "UPDATE user_favorite_companies SET industry_period = %s WHERE user_id = %s AND company_name = %s",
-                (update_info.industry_period, user_response.id, update_info.company_name),
+                (
+                    update_info.industry_period,
+                    user_response.id,
+                    update_info.company_name,
+                ),
             )
             await conn.commit()
             return {"status": "success"}
 
 
-async def find_user_favorite_company_stock_info(user_email: UserSearchUseEmail) -> List[ViewChart]:
+async def find_user_favorite_company_stock_info(
+    user_email: UserSearchUseEmail,
+) -> List[ViewChart]:
     user_favorite_company_list = await search_user_favorite_company(user_email)
     user_id = await user_email_to_id(user_email)
     user_favorite_company_stock_info_list = []
@@ -150,11 +160,17 @@ async def find_user_favorite_company_stock_info(user_email: UserSearchUseEmail) 
 
     for company_info in user_favorite_company_list:
         company_other_info = search_company_not_use_contains(company_info.company_name)
-        temp = view_chart(user_id, company_other_info.code, company_info.company_name, company_info.industry_period)
+        temp = view_chart(
+            user_id,
+            company_other_info.code,
+            company_info.company_name,
+            company_info.industry_period,
+        )
         if temp != "":
             view_charts.append(temp)
 
     return view_charts
+
 
 def view_chart(user_id, company_code, company_name, industry_period) -> ViewChart:
     today = datetime.today().strftime("%Y-%m-%d")
@@ -256,14 +272,11 @@ def view_chart(user_id, company_code, company_name, industry_period) -> ViewChar
     plt.savefig(save_path)
     plt.close()
 
-    static_path = '/' + str(user_id) + '/' + str(today) + '/' + f"{company_name}.png"
+    static_path = "/" + str(user_id) + "/" + str(today) + "/" + f"{company_name}.png"
 
     if os.path.exists(save_path):
         print(f"✅ 그래프 저장 완료: {save_path}")
-        return ViewChart(
-            company_name=company_name,
-            save_path=static_path
-        )
+        return ViewChart(company_name=company_name, save_path=static_path)
     else:
         print(f"❌ 저장 실패: {save_path}")
         return ""

@@ -2,10 +2,11 @@
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware  
+from starlette.middleware.base import BaseHTTPMiddleware
 from backend.utils.jwt import decode_token
 
 EXCLUDE_PREFIXES = ["/api/login", "/api/signup", "/static"]
+
 
 class TokenMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -25,5 +26,5 @@ class TokenMiddleware(BaseHTTPMiddleware):
             if payload:
                 request.state.user = payload
                 return await call_next(request)
-        
+
         return JSONResponse({"detail": "Unauthorized"}, status_code=401)

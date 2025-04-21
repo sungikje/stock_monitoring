@@ -29,6 +29,7 @@ app.include_router(user_endpoint.router, prefix="/api")
 
 app.mount("/static", StaticFiles(directory="backend/stock_chart"), name="static")
 
+
 @app.on_event("startup")
 async def startup():
     await connect_to_mysql(app)

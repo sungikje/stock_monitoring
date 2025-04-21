@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import List
 
+
 class StockInfoRequest(BaseModel):
     name: str
 
@@ -28,8 +29,10 @@ class SearchCompany(BaseModel):
 class FavoriteCompanyInfo(BaseModel):
     company_name: str
 
+
 class CreateFavoriteCompanyList(BaseModel):
     company_list: List[FavoriteCompanyInfo]
+
 
 class DeleteFavoriteCompany(BaseModel):
     user_id: str
@@ -39,6 +42,7 @@ class DeleteFavoriteCompany(BaseModel):
 class ViewChart(BaseModel):
     company_name: str
     save_path: str
+
 
 class UpdateIndustryInfo(BaseModel):
     company_name: str
