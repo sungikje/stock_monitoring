@@ -39,3 +39,7 @@ class DeleteFavoriteCompany(BaseModel):
 class ViewChart(BaseModel):
     company_name: str
     save_path: str
+
+class UpdateIndustryInfo(BaseModel):
+    company_name: str
+    industry_period: str

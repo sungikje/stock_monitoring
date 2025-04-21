@@ -30,4 +30,27 @@ const router = createRouter({
   routes,
 });
 
+router.beforeEach((to, from, next) => {
+  const publicPages = ["/"];
+  const authRequired = !publicPages.includes(to.path);
+  const token = localStorage.getItem("access_token");
+
+  if (authRequired && (!token || isTokenExpired(token))) {
+    return next("/"); // 토큰 없거나 만료되면 로그인으로 리디렉트
+  }
+
+  next();
+});
+
+function isTokenExpired(token) {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const now = Math.floor(Date.now() / 1000);
+    return payload.exp < now;
+  } catch (e) {
+    return true; // 잘못된 토큰이면 만료된 걸로 처리
+  }
+}
+
+
 export default router;

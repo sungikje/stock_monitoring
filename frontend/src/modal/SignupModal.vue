@@ -1,4 +1,3 @@
-<!-- components/SignupModal.vue -->
 <template>
   <div class="modal-overlay" v-if="visible">
     <div class="modal-content">

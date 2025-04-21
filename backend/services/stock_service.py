@@ -16,6 +16,7 @@ from backend.models.stock import (
     StockInfoResponse,
     SearchFavoriteCompany,
     FavoriteCompanyInfo,
+    UpdateIndustryInfo,
     ViewChart
 )
 
@@ -29,8 +30,6 @@ def search_company(name: str) -> Union[List[StockInfoResponse], dict]:
     if company_info.empty:
         return {"status": "error", "message": "company not found"}
 
-    print(company_info)
-
     result = [
         StockInfoResponse(code=row["Code"], name=row["Name"], market=row["Market"])
         for _, row in company_info.iterrows()
@@ -38,6 +37,22 @@ def search_company(name: str) -> Union[List[StockInfoResponse], dict]:
 
     return result
 
+
+def search_company_not_use_contains(name: str) -> StockInfoResponse:
+    krx_stocks = fdr.StockListing("KRX")
+    company_info = krx_stocks[krx_stocks["Name"] == name]
+
+    if company_info.empty:
+        raise ValueError(f"'{name}'에 해당하는 회사를 찾을 수 없습니다.")
+
+    # 첫 번째 결과만 사용
+    company_info = company_info.iloc[0]
+
+    return StockInfoResponse(
+        code=company_info["Code"],
+        name=company_info["Name"],
+        market=company_info["Market"]
+    )
 
 async def search_user_favorite_company(
     user_email: str,
@@ -110,6 +125,18 @@ async def stock_monitoring(user_email: UserSearchUseEmail) -> List[ViewChart]:
     else:
         return {"status": "error", "message": "no chart for user"}
 
+async def update_favorite_company_industry_period(user_email: UserSearchUseEmail, update_info: UpdateIndustryInfo):
+    user_response = await find_user_by_email(user_email)
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        async with conn.cursor(aiomysql.DictCursor) as cur:
+            await cur.execute(
+                "UPDATE user_favorite_companies SET industry_period = %s WHERE user_id = %s AND company_name = %s",
+                (update_info.industry_period, user_response.id, update_info.company_name),
+            )
+            await conn.commit()
+            return {"status": "success"}
+
 
 async def find_user_favorite_company_stock_info(user_email: UserSearchUseEmail) -> List[ViewChart]:
     user_favorite_company_list = await search_user_favorite_company(user_email)
@@ -121,16 +148,18 @@ async def find_user_favorite_company_stock_info(user_email: UserSearchUseEmail) 
         for idx in search_company(company.company_name):
             user_favorite_company_stock_info_list.append(idx)
 
-    for company in user_favorite_company_stock_info_list:
-        temp = view_chart(user_id, company.code, company.name)
+    for company_info in user_favorite_company_list:
+        company_other_info = search_company_not_use_contains(company_info.company_name)
+        temp = view_chart(user_id, company_other_info.code, company_info.company_name, company_info.industry_period)
         if temp != "":
             view_charts.append(temp)
 
     return view_charts
 
-def view_chart(user_id, company_code, company_name) -> ViewChart:
+def view_chart(user_id, company_code, company_name, industry_period) -> ViewChart:
     today = datetime.today().strftime("%Y-%m-%d")
-    two_year_ago = (datetime.today() - timedelta(days=730)).strftime("%Y-%m-%d")
+    period = industry_period * 365
+    two_year_ago = (datetime.today() - timedelta(days=period)).strftime("%Y-%m-%d")
 
     # 주식 데이터 가져오기
     df = fdr.DataReader(company_code, start=two_year_ago, end=today)
@@ -216,7 +245,7 @@ def view_chart(user_id, company_code, company_name) -> ViewChart:
     plt.grid(True)
 
     # 그래프 저장
-    output_dir = f"../stock_chart/{user_id}"
+    output_dir = f"./stock_chart/{user_id}"
     os.makedirs(output_dir, exist_ok=True)
 
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # backend/

@@ -10,6 +10,7 @@
             <th>Index</th>
           <th>회사명</th>
           <th>추가 일자</th>
+          <th>관찰 기간</th>
           <th>관리</th>
         </tr>
       </thead>
@@ -18,6 +19,7 @@
           <td>{{ index }}</td>
           <td>{{ company.company_name }}</td>
           <td>{{ filter_date(company.created_at) }}</td>
+          <td>{{ company.industry_period }}</td>
           <td>
             <button @click="editCompany(company)">✏ 수정</button>
             <button @click="deleteCompany(company.company_name)">🗑 삭제</button>
@@ -55,20 +57,45 @@
         </tr>
       </tbody>
     </table>
+
+    <ConfirmDeleteModal
+      v-if="showDeleteModal"
+      :companyName="selectedCompanyName"
+      @confirm="confirmDelete"
+      @close="showDeleteModal = false"
+    />
+
+    <EditCompanyModal
+      v-if="showEditModal"
+      :company="selectedCompany"
+      @confirm="confirmEdit"
+      @close="showEditModal = false"
+    />
   </div>
 </template>
 
 <script>
 import axios from "axios";
 
+import ConfirmDeleteModal from "@/modal/ConfirmDeleteModal.vue";
+import EditCompanyModal from "@/modal/EditCompanyModal.vue";
+
 export default {
+    components: {
+        ConfirmDeleteModal,
+        EditCompanyModal
+    },
   data() {
     return {
         companyName: "",
-      companies: [],
-      favoriteCompanies: [],
-      searchResults: [],
-      selectedResults: [],
+        companies: [],
+        favoriteCompanies: [],
+        searchResults: [],
+        selectedResults: [],
+        showDeleteModal: false,
+        showEditModal: false,
+        selectedCompanyName: "",
+        selectedCompany: null,
     };
   },
   methods: {
@@ -137,26 +164,51 @@ export default {
       }
     },
     editCompany(company) {
-      console.log("수정:", company);
+        this.selectedCompany = company;
+        this.showEditModal = true;
     },
-    async deleteCompany(company_name) {
-        const payload = {
-            company_name: company_name
-        }
-        try {
-            const access_token = localStorage.getItem("access_token");
-            const res = await axios.post(
-                "http://localhost:8000/api/delete_favorite_company",
-                payload, 
-                {
-                    headers: {
-                        Authorization: `Bearer ${access_token}`,
-                    },
-            });
-            this.$router.go(0);
-        } catch (error) {
-            console.error('Request failed:', error);
-            this.errorMessage = error.message || "Request failed";
+
+    async confirmEdit(updatedInfo) {
+        console.log(updatedInfo)
+      try {
+        const access_token = localStorage.getItem("access_token");
+        const res = await axios.post(
+          "http://localhost:8000/api/update_favorite_company_industry_period",
+          updatedInfo,
+          {
+            headers: {
+              Authorization: `Bearer ${access_token}`,
+            },
+          }
+        );
+        this.showEditModal = false;
+        this.searchFavoriteCompany(); // 최신 데이터 반영
+      } catch (error) {
+        console.error("Edit failed:", error);
+      }
+    },
+
+    deleteCompany(company_name) {
+      this.selectedCompanyName = company_name;
+      this.showDeleteModal = true;
+    },
+
+    async confirmDelete() {
+      try {
+        const access_token = localStorage.getItem("access_token");
+        const res = await axios.post(
+          "http://localhost:8000/api/delete_favorite_company",
+          { company_name: this.selectedCompanyName },
+          {
+            headers: {
+              Authorization: `Bearer ${access_token}`,
+            },
+          }
+        );
+        this.showDeleteModal = false;
+        this.searchFavoriteCompany();
+      } catch (error) {
+        console.error("Delete failed:", error);
       }
     },
 
