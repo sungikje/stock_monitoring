@@ -6,7 +6,6 @@ import bcrypt
 # Project import
 from backend.models.user import (
     UserResponse,
-    UserSearchUseEmail,
     UserLoginInfo,
     UserCreateInfo,
 )
@@ -25,21 +24,6 @@ async def find_user_by_email(user_email: str) -> UserResponse:
 
             user_response = UserResponse(**user_row)
     return user_response
-
-
-async def user_email_to_id(user_email: str) -> str:
-    pool = get_pool()
-    async with pool.acquire() as conn:
-        async with conn.cursor(aiomysql.DictCursor) as cur:
-            await cur.execute("SELECT * FROM users WHERE email = %s", (user_email,))
-            user_row = await cur.fetchone()
-
-            if not user_row:
-                return None
-
-            user_id = UserResponse(**user_row).id
-    return user_id
-
 
 async def user_join_membership(user_info: UserCreateInfo):
     pool = get_pool()

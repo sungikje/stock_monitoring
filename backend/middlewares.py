@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from backend.utils.jwt import decode_token
 
-EXCLUDE_PREFIXES = ["/api/login", "/api/signup", "/static"]
+EXCLUDE_PREFIXES = ["/api/login", "/api/signup", "/static", "/docs", "/openapi.json"]
 
 
 class TokenMiddleware(BaseHTTPMiddleware):

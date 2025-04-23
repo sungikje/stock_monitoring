@@ -22,16 +22,12 @@ class SearchFavoriteCompany(BaseModel):
     created_at: datetime
 
 
-class SearchCompany(BaseModel):
-    company_name: str
-
-
-class FavoriteCompanyInfo(BaseModel):
+class CompanyInfo(BaseModel):
     company_name: str
 
 
 class CreateFavoriteCompanyList(BaseModel):
-    company_list: List[FavoriteCompanyInfo]
+    company_list: List[CompanyInfo]
 
 
 class DeleteFavoriteCompany(BaseModel):

@@ -4,7 +4,7 @@ from typing import List, Union
 from fastapi import Request
 
 # Project import
-from backend.models.stock import StockInfoResponse, FavoriteCompanyInfo, ViewChart
+from backend.models.stock import StockInfoResponse, CompanyInfo, ViewChart
 from backend.services.stock_service import (
     search_company,
     search_user_favorite_company,
@@ -15,7 +15,7 @@ from backend.services.stock_service import (
 )
 from backend.models.stock import (
     SearchFavoriteCompany,
-    SearchCompany,
+    CompanyInfo,
     CreateFavoriteCompanyList,
     UpdateIndustryInfo,
 )
@@ -24,7 +24,7 @@ router = APIRouter()
 
 
 @router.post("/search_company")
-def api_search_company(request: SearchCompany) -> Union[List[StockInfoResponse], dict]:
+def api_search_company(request: CompanyInfo) -> Union[List[StockInfoResponse], dict]:
     return search_company(request.company_name)
 
 
@@ -46,7 +46,7 @@ async def api_create_favorite_company(
 
 @router.post("/delete_favorite_company")
 async def api_delete_favorite_company(
-    request: Request, company_info: FavoriteCompanyInfo
+    request: Request, company_info: CompanyInfo
 ):
     user = request.state.user
     return await delete_favorite_company(user["user_id"], company_info)

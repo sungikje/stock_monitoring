@@ -11,16 +11,16 @@ from datetime import datetime, timedelta
 # Project import
 from backend.db.connection import get_pool
 from backend.models.user import UserSearchUseEmail
-from backend.services.user_service import find_user_by_email, user_email_to_id
+from backend.services.user_service import find_user_by_email
 from backend.models.stock import (
     StockInfoResponse,
     SearchFavoriteCompany,
-    FavoriteCompanyInfo,
+    CompanyInfo,
     UpdateIndustryInfo,
     ViewChart,
 )
 
-
+# Search Company use Company's name, In this case search everything if contains company's name
 def search_company(name: str) -> Union[List[StockInfoResponse], dict]:
     krx_stocks = fdr.StockListing("KRX")
     company_info = krx_stocks[
@@ -37,7 +37,7 @@ def search_company(name: str) -> Union[List[StockInfoResponse], dict]:
 
     return result
 
-
+# Search Company use Company's name, but only search same company's name
 def search_company_not_use_contains(name: str) -> StockInfoResponse:
     krx_stocks = fdr.StockListing("KRX")
     company_info = krx_stocks[krx_stocks["Name"] == name]
@@ -45,13 +45,10 @@ def search_company_not_use_contains(name: str) -> StockInfoResponse:
     if company_info.empty:
         raise ValueError(f"'{name}'에 해당하는 회사를 찾을 수 없습니다.")
 
-    # 첫 번째 결과만 사용
     company_info = company_info.iloc[0]
 
     return StockInfoResponse(
-        code=company_info["Code"],
-        name=company_info["Name"],
-        market=company_info["Market"],
+        code=company_info["Code"], name=company_info["Name"], market=company_info["Market"],
     )
 
 
@@ -74,7 +71,7 @@ async def search_user_favorite_company(
             return favorite_companies
 
 
-async def delete_favorite_company(user_id: str, company_info: FavoriteCompanyInfo):
+async def delete_favorite_company(user_id: str, company_info: CompanyInfo):
     pool = get_pool()
     print(user_id, company_info.company_name)
     async with pool.acquire() as conn:
@@ -96,14 +93,14 @@ async def delete_favorite_company(user_id: str, company_info: FavoriteCompanyInf
             return {"status": "success"}
 
 
-async def create_favorite_company(user_id: str, create_info: List[FavoriteCompanyInfo]):
+async def create_favorite_company(user_id: str, create_info_list: List[CompanyInfo]):
     pool = get_pool()
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
-            for i in create_info:
+            for company_info in create_info_list:
                 await cur.execute(
                     "SELECT * FROM user_favorite_companies WHERE user_id = %s AND company_name = %s",
-                    (user_id, i.company_name),
+                    (user_id, company_info.company_name),
                 )
 
                 delete_tf = await cur.fetchall()
@@ -112,7 +109,7 @@ async def create_favorite_company(user_id: str, create_info: List[FavoriteCompan
 
                 await cur.execute(
                     "INSERT INTO user_favorite_companies (user_id, company_name, industry_period, base_price) VALUES (%s, %s, 2, 50000)",
-                    (user_id, i.company_name),
+                    (user_id, company_info.company_name),
                 )
             await conn.commit()
             return {"status": "success"}
@@ -150,18 +147,14 @@ async def find_user_favorite_company_stock_info(
     user_email: UserSearchUseEmail,
 ) -> List[ViewChart]:
     user_favorite_company_list = await search_user_favorite_company(user_email)
-    user_id = await user_email_to_id(user_email)
-    user_favorite_company_stock_info_list = []
+    user_info = await find_user_by_email(user_email)
     view_charts = []
 
-    for company in user_favorite_company_list:
-        for idx in search_company(company.company_name):
-            user_favorite_company_stock_info_list.append(idx)
-
     for company_info in user_favorite_company_list:
+        # need company code
         company_other_info = search_company_not_use_contains(company_info.company_name)
         temp = view_chart(
-            user_id,
+            user_info.id,
             company_other_info.code,
             company_info.company_name,
             company_info.industry_period,

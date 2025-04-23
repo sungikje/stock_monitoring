@@ -180,7 +180,6 @@ export default {
     },
 
     async confirmEdit(updatedInfo) {
-      console.log(updatedInfo);
       try {
         const access_token = localStorage.getItem("access_token");
         const res = await axios.post(
