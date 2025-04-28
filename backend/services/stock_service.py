@@ -20,6 +20,8 @@ from backend.models.stock import (
     ViewChart,
 )
 
+STOCK_CHART_PATH='stock_chart'
+
 # Search Company use Company's name, In this case search everything if contains company's name
 def search_company(name: str) -> Union[List[StockInfoResponse], dict]:
     krx_stocks = fdr.StockListing("KRX")
@@ -165,7 +167,38 @@ async def find_user_favorite_company_stock_info(
     return view_charts
 
 
-def view_chart(user_id, company_code, company_name, industry_period) -> ViewChart:
+def is_today_chart_exist() -> bool:
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # backend/
+    today = datetime.today().strftime("%Y-%m-%d")
+    path_to_check = os.path.join(BASE_DIR, STOCK_CHART_PATH, today)
+
+    if os.path.exists(path_to_check):
+        return True
+    else:
+        return False
+
+async def make_stock_charts():
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        async with conn.cursor(aiomysql.DictCursor) as cur:
+            await cur.execute("SELECT DISTINCT user_id FROM user_favorite_companies")
+            user_list = await cur.fetchall()
+    
+    for user in user_list:
+        async with pool.acquire() as conn:
+            async with conn.cursor(aiomysql.DictCursor) as cur:
+                await cur.execute(
+                    "SELECT * FROM user_favorite_companies WHERE user_id = %s",
+                    (user['user_id'])
+                    )
+        user_favorite_company_info = await cur.fetchall()
+
+        # View Chart Param
+        for vcp in user_favorite_company_info:
+            company_info = search_company_not_use_contains(vcp['company_name'])
+            await view_chart(vcp['user_id'], company_info.code, vcp['company_name'], vcp['industry_period'])
+
+async def view_chart(user_id, company_code, company_name, industry_period):
     today = datetime.today().strftime("%Y-%m-%d")
     period = industry_period * 365
     two_year_ago = (datetime.today() - timedelta(days=period)).strftime("%Y-%m-%d")
@@ -253,23 +286,10 @@ def view_chart(user_id, company_code, company_name, industry_period) -> ViewChar
     plt.legend()
     plt.grid(True)
 
-    # 그래프 저장
-    output_dir = f"./stock_chart/{user_id}"
-    os.makedirs(output_dir, exist_ok=True)
-
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # backend/
-    output_dir = os.path.join(BASE_DIR, "stock_chart", str(user_id), str(today))
+    output_dir = os.path.join(BASE_DIR, STOCK_CHART_PATH, str(today), str(user_id))
     os.makedirs(output_dir, exist_ok=True)
-    save_path = os.path.join(output_dir, f"{company_name}.png")
+    save_path = os.path.join(BASE_DIR, STOCK_CHART_PATH, str(today), str(user_id), f"{company_name}.png")
 
     plt.savefig(save_path)
     plt.close()
-
-    static_path = "/" + str(user_id) + "/" + str(today) + "/" + f"{company_name}.png"
-
-    if os.path.exists(save_path):
-        print(f"✅ 그래프 저장 완료: {save_path}")
-        return ViewChart(company_name=company_name, save_path=static_path)
-    else:
-        print(f"❌ 저장 실패: {save_path}")
-        return ""
