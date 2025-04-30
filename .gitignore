@@ -10,3 +10,6 @@ venv/*
 
 # chart table
 stock_chart
+
+# log
+log

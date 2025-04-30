@@ -19,10 +19,12 @@ from backend.models.stock import (
     UpdateIndustryInfo,
     ViewChart,
 )
-from backend.config.config import BASE_DIR, STOCK_CHART_PATH
+from backend.config.env import BASE_DIR, STOCK_CHART_PATH
+from backend.config.logging import log_call
 
 
 # Search Company use Company's name, In this case search everything if contains company's name
+@log_call
 def search_company(name: str) -> Union[List[StockInfoResponse], dict]:
     krx_stocks = fdr.StockListing("KRX")
     company_info = krx_stocks[
@@ -39,7 +41,9 @@ def search_company(name: str) -> Union[List[StockInfoResponse], dict]:
 
     return result
 
+
 # Search Company use Company's name, but only search same company's name
+@log_call
 def search_company_not_use_contains(name: str) -> StockInfoResponse:
     krx_stocks = fdr.StockListing("KRX")
     company_info = krx_stocks[krx_stocks["Name"] == name]
@@ -54,6 +58,7 @@ def search_company_not_use_contains(name: str) -> StockInfoResponse:
     )
 
 
+@log_call
 async def search_user_favorite_company(
     user_email: str,
 ) -> List[SearchFavoriteCompany]:
@@ -73,6 +78,7 @@ async def search_user_favorite_company(
             return favorite_companies
 
 
+@log_call
 async def delete_favorite_company(user_id: str, company_info: CompanyInfo):
     pool = get_pool()
     print(user_id, company_info.company_name)
@@ -95,6 +101,7 @@ async def delete_favorite_company(user_id: str, company_info: CompanyInfo):
             return {"status": "success"}
 
 
+@log_call
 async def create_favorite_company(user_id: str, create_info_list: List[CompanyInfo]):
     pool = get_pool()
     async with pool.acquire() as conn:
@@ -116,6 +123,8 @@ async def create_favorite_company(user_id: str, create_info_list: List[CompanyIn
             await conn.commit()
             return {"status": "success"}
 
+
+@log_call
 async def update_favorite_company_industry_period(
     user_email: UserSearchUseEmail, update_info: UpdateIndustryInfo
 ):
@@ -134,6 +143,8 @@ async def update_favorite_company_industry_period(
             await conn.commit()
             return {"status": "success"}
 
+
+@log_call
 async def get_view_chart(user_email: UserSearchUseEmail) -> List[ViewChart]:
     today = datetime.today().strftime("%Y-%m-%d")
     user = await find_user_by_email(user_email)
@@ -155,7 +166,7 @@ async def get_view_chart(user_email: UserSearchUseEmail) -> List[ViewChart]:
     return chart_list
 
 
-
+@log_call
 async def find_user_favorite_company_stock_info(
     user_email: UserSearchUseEmail,
 ) -> List[ViewChart]:
@@ -178,6 +189,7 @@ async def find_user_favorite_company_stock_info(
     return view_charts
 
 
+@log_call
 def is_today_chart_exist() -> bool:
     today = datetime.today().strftime("%Y-%m-%d")
     path_to_check = os.path.join(BASE_DIR, STOCK_CHART_PATH, today)
@@ -187,6 +199,8 @@ def is_today_chart_exist() -> bool:
     else:
         return False
 
+
+@log_call
 async def make_stock_charts():
     pool = get_pool()
     async with pool.acquire() as conn:
@@ -208,6 +222,8 @@ async def make_stock_charts():
             company_info = search_company_not_use_contains(vcp['company_name'])
             await view_chart(vcp['user_id'], company_info.code, vcp['company_name'], vcp['industry_period'])
 
+
+@log_call
 async def view_chart(user_id, company_code, company_name, industry_period):
     today = datetime.today().strftime("%Y-%m-%d")
     period = industry_period * 365
