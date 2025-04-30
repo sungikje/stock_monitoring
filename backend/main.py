@@ -12,7 +12,7 @@ from backend.api.endpoints import stock_endpoint, user_endpoint
 from backend.db.connection import connect_to_mysql, disconnect_from_mysql
 from backend.config.middlewares import TokenMiddleware
 from backend.config.scheduler import start_scheduler, stop_scheduler
-from backend.config.config import BASE_DIR, STOCK_CHART_PATH
+from backend.config.env import BASE_DIR
 from backend.services.stock_service import is_today_chart_exist, make_stock_charts
 
 @asynccontextmanager

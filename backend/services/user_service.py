@@ -10,8 +10,9 @@ from backend.models.user import (
     UserCreateInfo,
 )
 from backend.utils.jwt import create_access_token
+from backend.config.logging import log_call
 
-
+@log_call
 async def find_user_by_email(user_email: str) -> UserResponse:
     pool = get_pool()
     async with pool.acquire() as conn:
@@ -25,6 +26,7 @@ async def find_user_by_email(user_email: str) -> UserResponse:
             user_response = UserResponse(**user_row)
     return user_response
 
+@log_call
 async def user_join_membership(user_info: UserCreateInfo):
     pool = get_pool()
     async with pool.acquire() as conn:
@@ -49,7 +51,7 @@ async def user_join_membership(user_info: UserCreateInfo):
             else:
                 return {"status": "error", "message": "already exist user"}
 
-
+@log_call
 async def user_login(login_info: UserLoginInfo):
     pool = get_pool()
     async with pool.acquire() as conn:
