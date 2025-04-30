@@ -1,5 +1,7 @@
 # backend/main.py
 
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -10,6 +12,7 @@ from backend.api.endpoints import stock_endpoint, user_endpoint
 from backend.db.connection import connect_to_mysql, disconnect_from_mysql
 from backend.config.middlewares import TokenMiddleware
 from backend.config.scheduler import start_scheduler, stop_scheduler
+from backend.config.config import BASE_DIR, STOCK_CHART_PATH
 from backend.services.stock_service import is_today_chart_exist, make_stock_charts
 
 @asynccontextmanager
@@ -50,7 +53,11 @@ app.include_router(stock_endpoint.router, prefix="/api")
 app.include_router(user_endpoint.router, prefix="/api")
 
 # Chart File access
-app.mount("/static", StaticFiles(directory="backend/stock_chart"), name="static")
+app.mount(
+    "/static",
+    StaticFiles(directory=os.path.join(BASE_DIR)),  # <-- 여기 주목
+    name="static"
+)
 
 @app.get("/")
 def root():

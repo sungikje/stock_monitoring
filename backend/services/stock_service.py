@@ -19,8 +19,8 @@ from backend.models.stock import (
     UpdateIndustryInfo,
     ViewChart,
 )
+from backend.config.config import BASE_DIR, STOCK_CHART_PATH
 
-STOCK_CHART_PATH='stock_chart'
 
 # Search Company use Company's name, In this case search everything if contains company's name
 def search_company(name: str) -> Union[List[StockInfoResponse], dict]:
@@ -116,16 +116,6 @@ async def create_favorite_company(user_id: str, create_info_list: List[CompanyIn
             await conn.commit()
             return {"status": "success"}
 
-
-async def stock_monitoring(user_email: UserSearchUseEmail) -> List[ViewChart]:
-    viewChartLists = await find_user_favorite_company_stock_info(user_email)
-
-    if viewChartLists != []:
-        return viewChartLists
-    else:
-        return {"status": "error", "message": "no chart for user"}
-
-
 async def update_favorite_company_industry_period(
     user_email: UserSearchUseEmail, update_info: UpdateIndustryInfo
 ):
@@ -143,6 +133,27 @@ async def update_favorite_company_industry_period(
             )
             await conn.commit()
             return {"status": "success"}
+
+async def get_view_chart(user_email: UserSearchUseEmail) -> List[ViewChart]:
+    today = datetime.today().strftime("%Y-%m-%d")
+    user = await find_user_by_email(user_email)
+    chart_path = os.path.join(BASE_DIR, STOCK_CHART_PATH, today, str(user.id))
+
+    chart_list: List[ViewChart] = []
+
+    if not os.path.exists(chart_path):
+        return chart_list 
+
+    for file in os.listdir(chart_path):
+        real_file_path = os.path.join(BASE_DIR, STOCK_CHART_PATH, today, str(user.id), file)
+        if os.path.isfile(real_file_path):
+            name, _ = os.path.splitext(file)
+            static_file_path = f"/{STOCK_CHART_PATH}/{today}/{user.id}/{file}"
+            chart = ViewChart(company_name=name, save_path=static_file_path)
+            chart_list.append(chart)
+
+    return chart_list
+
 
 
 async def find_user_favorite_company_stock_info(
@@ -168,7 +179,6 @@ async def find_user_favorite_company_stock_info(
 
 
 def is_today_chart_exist() -> bool:
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # backend/
     today = datetime.today().strftime("%Y-%m-%d")
     path_to_check = os.path.join(BASE_DIR, STOCK_CHART_PATH, today)
 

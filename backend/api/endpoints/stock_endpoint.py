@@ -10,8 +10,8 @@ from backend.services.stock_service import (
     search_user_favorite_company,
     create_favorite_company,
     delete_favorite_company,
-    stock_monitoring,
-    update_favorite_company_industry_period,
+    get_view_chart,
+    update_favorite_company_industry_period
 )
 from backend.models.stock import (
     SearchFavoriteCompany,
@@ -55,7 +55,7 @@ async def api_delete_favorite_company(
 @router.post("/stock_monitoring")
 async def api_stock_monitoring(request: Request) -> List[ViewChart]:
     user = request.state.user
-    return await stock_monitoring(user["email"])
+    return await get_view_chart(user["email"])
 
 
 @router.post("/update_favorite_company_industry_period")
