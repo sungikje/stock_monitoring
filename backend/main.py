@@ -13,22 +13,20 @@ from backend.db.connection import connect_to_mysql, disconnect_from_mysql
 from backend.config.middlewares import TokenMiddleware
 from backend.config.scheduler import start_scheduler, stop_scheduler
 from backend.config.env import BASE_DIR
-from backend.services.stock_service import is_today_chart_exist, make_stock_charts
+from backend.services.stock_service import is_today_chart_exist, make_stock_charts, clean_stock_charts
 
+# if a lot of user? multiprocessing.Pool? Celery async work queue?
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-
     await connect_to_mysql(app)
-
     start_scheduler()
 
+    clean_stock_charts()
     if not is_today_chart_exist():
         await make_stock_charts()
     
     yield
-
     await disconnect_from_mysql(app)
-
     stop_scheduler()
 
 

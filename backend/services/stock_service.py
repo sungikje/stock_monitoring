@@ -7,6 +7,8 @@ import numpy as np
 import FinanceDataReader as fdr
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
+import shutil
+
 
 # Project import
 from backend.db.connection import get_pool
@@ -222,6 +224,20 @@ async def make_stock_charts():
             company_info = search_company_not_use_contains(vcp['company_name'])
             await view_chart(vcp['user_id'], company_info.code, vcp['company_name'], vcp['industry_period'])
 
+@log_call
+def clean_stock_charts():
+    print("come in")
+    base_path = os.path.join(BASE_DIR, STOCK_CHART_PATH)
+    cutoff = datetime.today() - timedelta(days=7)
+
+    for day_folder in os.listdir(base_path):
+        folder_path = os.path.join(base_path, day_folder)
+        try:
+            folder_date = datetime.strptime(day_folder, "%Y-%m-%d")
+            if folder_date < cutoff:
+                shutil.rmtree(folder_path)
+        except ValueError:
+            continue
 
 @log_call
 async def view_chart(user_id, company_code, company_name, industry_period):
