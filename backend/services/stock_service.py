@@ -226,7 +226,6 @@ async def make_stock_charts():
 
 @log_call
 def clean_stock_charts():
-    print("come in")
     base_path = os.path.join(BASE_DIR, STOCK_CHART_PATH)
     cutoff = datetime.today() - timedelta(days=7)
 
@@ -249,16 +248,19 @@ async def view_chart(user_id, company_code, company_name, industry_period):
     df = fdr.DataReader(company_code, start=two_year_ago, end=today)
 
     # 이동 평균선 계산
-    df["SMA_30"] = df["Close"].rolling(window=30).mean()
-    df["SMA_50"] = df["Close"].rolling(window=50).mean()
-    df["SMA_200"] = df["Close"].rolling(window=200).mean()
+    if industry_period == 1:
+        df["SMA_short"] = df["Close"].rolling(window=20).mean()
+        df["SMA_long"] = df["Close"].rolling(window=50).mean()
+    elif industry_period == 2:
+        df["SMA_short"] = df["Close"].rolling(window=50).mean()
+        df["SMA_long"] = df["Close"].rolling(window=200).mean()
 
-    # 데드 크로스 여부 (50일선 < 200일선)
-    df["Dead_Cross"] = df["SMA_50"] < df["SMA_200"]
+    # 데드 크로스 여부 (short < long)
+    df["Dead_Cross"] = df["SMA_short"] < df["SMA_long"]
 
     # 오늘자(최신 날짜) 데드 크로스 여부 확인
     today_dead_cross = df["Dead_Cross"].iloc[-1]
-
+    
     # 그래프 시각화
     plt.figure(figsize=(14, 7))
 
@@ -267,30 +269,22 @@ async def view_chart(user_id, company_code, company_name, industry_period):
         df.index,
         df["Close"],
         label="Daily Closing Price",
-        color="dodgerblue",
+        color="black",
         alpha=0.6,
         linewidth=2,
     )
     plt.plot(
         df.index,
-        df["SMA_30"],
-        label="30-Day SMA",
-        color="red",
-        linestyle="--",
-        alpha=0.9,
-    )
-    plt.plot(
-        df.index,
-        df["SMA_50"],
-        label="50-Day SMA",
+        df["SMA_short"],
+        label="short SMA",
         color="limegreen",
         linestyle="--",
         alpha=0.9,
     )
     plt.plot(
         df.index,
-        df["SMA_200"],
-        label="200-Day SMA",
+        df["SMA_long"],
+        label="long SMA",
         color="orange",
         linestyle="--",
         alpha=0.9,
