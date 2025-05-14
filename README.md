@@ -26,7 +26,7 @@ uvicorn backend.main:app --reload # 실행 명령어
 <br><br>
 
 # 관심 기업 사이드바
-![main](.first.png)
+![main](./first.png)
 ## 관심 회사 검색 및 추가
 1. 관심 기업 클릭
 2. 관심 회사 검색, 포함된 단어로 검색
@@ -40,6 +40,6 @@ uvicorn backend.main:app --reload # 실행 명령어
 
 
 # 주식 모니터링
-![chart](.second.png)
+![chart](./second.png)
 현재는 기간에 따라 1년(short-30, long-50), 2년(short-50, long-200)으로 Dead Cross 그래프 표시
 - 그래프 제목은 krx 기준 "회사 코드 - Dead Cross 여부"
