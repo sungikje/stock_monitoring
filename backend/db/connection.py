@@ -1,6 +1,6 @@
 import aiomysql
 from fastapi import FastAPI
-
+from backend.config.logging import logger
 
 async def connect_to_mysql(app: FastAPI):
     global db_pool
@@ -15,7 +15,7 @@ async def connect_to_mysql(app: FastAPI):
         )
         db_pool = app.state.pool
     except Exception as e:
-        print("DB connection fail")
+        logger.info("DB connection fail")
 
 
 async def disconnect_from_mysql(app: FastAPI):

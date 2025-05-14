@@ -83,7 +83,6 @@ async def search_user_favorite_company(
 @log_call
 async def delete_favorite_company(user_id: str, company_info: CompanyInfo):
     pool = get_pool()
-    print(user_id, company_info.company_name)
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
             await cur.execute(
