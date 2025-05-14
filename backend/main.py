@@ -21,7 +21,6 @@ async def lifespan(app: FastAPI):
     await connect_to_mysql(app)
     start_scheduler()
 
-    clean_stock_charts()
     if not is_today_chart_exist():
         await make_stock_charts()
     
@@ -45,7 +44,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(TokenMiddleware)
+# app.add_middleware(TokenMiddleware)
 
 app.include_router(stock_endpoint.router, prefix="/api")
 app.include_router(user_endpoint.router, prefix="/api")

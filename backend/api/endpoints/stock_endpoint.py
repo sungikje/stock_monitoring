@@ -31,38 +31,25 @@ def api_search_company(request: CompanyInfo) -> Union[List[StockInfoResponse], d
 
 @log_call
 @router.post("/search_favorite_company")
-async def api_search_user_favorite_company(
-    request: Request,
-) -> List[SearchFavoriteCompany]:
-    user = request.state.user
-    return await search_user_favorite_company(user["email"])
+async def api_search_user_favorite_company() -> List[SearchFavoriteCompany]:
+    return await search_user_favorite_company("admin@example.com")
 
 @log_call
 @router.post("/create_favorite_company")
-async def api_create_favorite_company(
-    request: Request, create_info: CreateFavoriteCompanyList
-):
-    user = request.state.user
-    return await create_favorite_company(user["user_id"], create_info.company_list)
+async def api_create_favorite_company(create_info: CreateFavoriteCompanyList):
+    return await create_favorite_company(1, create_info.company_list)
 
 @log_call
 @router.post("/delete_favorite_company")
-async def api_delete_favorite_company(
-    request: Request, company_info: CompanyInfo
-):
-    user = request.state.user
-    return await delete_favorite_company(user["user_id"], company_info)
+async def api_delete_favorite_company(company_info: CompanyInfo):
+    return await delete_favorite_company(1, company_info)
 
 @log_call
 @router.post("/stock_monitoring")
-async def api_stock_monitoring(request: Request) -> List[ViewChart]:
-    user = request.state.user
-    return await get_view_chart(user["email"])
+async def api_stock_monitoring() -> List[ViewChart]:
+    return await get_view_chart("admin@example.com")
 
 @log_call
 @router.post("/update_favorite_company_industry_period")
-async def api_update_favorite_company_industry_period(
-    request: Request, update_info: UpdateIndustryInfo
-):
-    user = request.state.user
-    return await update_favorite_company_industry_period(user["email"], update_info)
+async def api_update_favorite_company_industry_period(update_info: UpdateIndustryInfo):
+    return await update_favorite_company_industry_period("admin@example.com", update_info)

@@ -322,7 +322,10 @@ async def view_chart(user_id, company_code, company_name, industry_period):
     plt.legend()
     plt.grid(True)
 
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # backend/
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    chart_path = os.path.join(BASE_DIR, STOCK_CHART_PATH)
+    os.makedirs(chart_path, exist_ok=True)
+
     output_dir = os.path.join(BASE_DIR, STOCK_CHART_PATH, str(today), str(user_id))
     os.makedirs(output_dir, exist_ok=True)
     save_path = os.path.join(BASE_DIR, STOCK_CHART_PATH, str(today), str(user_id), f"{company_name}.png")

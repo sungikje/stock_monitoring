@@ -10,10 +10,10 @@
     <nav class="menu">
       <ul>
         <li>
-          <router-link to="/main/edit-companies">📊 관심 기업</router-link>
+          <router-link to="/edit-companies">📊 관심 기업</router-link>
         </li>
         <li>
-          <router-link to="/main/monitoring">📈 주식 모니터링</router-link>
+          <router-link to="/monitoring">📈 주식 모니터링</router-link>
         </li>
         <!-- <li><a href="#">⚙ 설정</a></li> -->
       </ul>
