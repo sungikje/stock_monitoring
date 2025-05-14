@@ -1,3 +1,5 @@
+CREATE DATABASE stock_db;
+
 -- users 테이블
 CREATE TABLE users (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
