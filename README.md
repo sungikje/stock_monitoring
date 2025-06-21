@@ -16,6 +16,7 @@ npm run dev # 실행 명령어
 - `stock_monitoring/backend/db/schemas.sql` 내 stock_db<br>
 - `stock_monitoring/backend/db/seed.sql` 내 admin
 ```shell
+source venv/bin/activate # 가상환경 실행
 pip install -r requirements.txt
 uvicorn backend.main:app --reload # 실행 명령어
 ```

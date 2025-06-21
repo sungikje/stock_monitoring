@@ -34,14 +34,6 @@ export default {
   height: 100vh;
 }
 
-/* 사이드바 - 세로 전체 차지 */
-.sidebar {
-  width: 250px;
-  height: 100vh;
-  background-color: #2c3e50;
-  color: white;
-}
-
 /* 사이드바 오른쪽 컨텐츠 영역 */
 .content-area {
   flex-grow: 1;

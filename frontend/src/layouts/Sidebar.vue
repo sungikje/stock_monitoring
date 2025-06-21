@@ -58,6 +58,7 @@ export default {
   flex-direction: column;
   font-family: "Arial", sans-serif;
   box-shadow: 3px 0 5px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
 }
 
 /* 날짜 & 시간 */
