@@ -220,6 +220,17 @@ export default {
       }
     },
 
+    async generateGraph() {
+        try {
+            const res = await axios.post(
+                "http://localhost:8000/api/make_stock_monitoring_chart"
+            );
+            console.log("success request")
+        } catch (error) {
+            console.error("Delete failed:", error);
+        }
+    },
+
     filter_date(dateString) {
       const date = new Date(dateString);
       const year = date.getFullYear();

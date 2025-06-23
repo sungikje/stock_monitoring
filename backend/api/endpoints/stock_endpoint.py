@@ -11,7 +11,8 @@ from backend.services.stock_service import (
     create_favorite_company,
     delete_favorite_company,
     get_view_chart,
-    update_favorite_company_industry_period
+    update_favorite_company_industry_period,
+    make_stock_moniotring_chart
 )
 from backend.models.stock import (
     SearchFavoriteCompany,
@@ -53,3 +54,8 @@ async def api_stock_monitoring() -> List[ViewChart]:
 @router.post("/update_favorite_company_industry_period")
 async def api_update_favorite_company_industry_period(update_info: UpdateIndustryInfo):
     return await update_favorite_company_industry_period("admin@example.com", update_info)
+
+@log_call
+@router.post("/make_stock_monitoring_chart")
+async def api_make_stock_monitoring_chart():
+    return await make_stock_moniotring_chart()

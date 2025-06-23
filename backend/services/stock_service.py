@@ -144,6 +144,38 @@ async def update_favorite_company_industry_period(
             await conn.commit()
             return {"status": "success"}
 
+@log_call
+async def make_stock_moniotring_chart():
+    today = datetime.today().strftime("%Y-%m-%d")
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    save_path = os.path.join(BASE_DIR, STOCK_CHART_PATH, str(today), str(1))
+
+    file_names = []
+    try:
+        file_names = os.listdir(save_path)
+        file_names = [name.replace(".png", "") for name in file_names]
+        print("file name:", file_names)
+    except FileNotFoundError:
+        print(f"오류: '{save_path}' 경로를 찾을 수 없습니다.")
+    except NotADirectoryError:
+        print(f"오류: '{save_path}'은(는) 디렉토리가 아닙니다.")
+    except Exception as e:
+        print(f"오류 발생: {e}")
+
+    search_favorite_companies = await search_user_favorite_company("admin@example.com")
+    favorite_company_list = []
+    for company_info in search_favorite_companies:
+        favorite_company_list.append(company_info.company_name)
+    print("favorite company list: ", favorite_company_list)
+
+    for name in file_names:
+        favorite_company_list.remove(name)
+    
+    if len(favorite_company_list) != 0:
+        await make_stock_charts()
+    else:
+        print("already exist")
+
 
 @log_call
 async def get_view_chart(user_email: UserSearchUseEmail) -> List[ViewChart]:
