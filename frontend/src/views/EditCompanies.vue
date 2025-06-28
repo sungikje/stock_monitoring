@@ -1,8 +1,14 @@
 <template>
     <div class="edit-companies">
-      <div class="company-list-section"> <div class="section-header"> <h1>📋 관심 회사 목록</h1>
-          <button @click="generateGraph" class="generate-graph-button">📈 그래프 생성</button> </div>
-  
+      <div class="company-list-section"> <div class="section-header"> 
+        <h1>📋 관심 회사 목록</h1>
+            <button v-if="(!isLoading && !tryCreateChart)" @click="generateGraph" class="generate-graph-button">📈 그래프 생성</button> 
+            <button v-else-if="(isLoading && tryCreateChart)" class="generate-graph-button">그래프 생성 중입니다.</button>
+            <button v-else-if="createChartResult" class="generate-graph-button">그래프 생성에 실패했습니다.</button>
+            <router-link v-if="!isLoading && createChartResult === false && tryCreateChart" to="/monitoring" class="generate-graph-button">
+                그래프 생성에 성공했습니다.
+            </router-link>
+        </div>
         <p v-if="favoriteCompanies.length === 0">관심 회사가 없습니다.</p>
         <table v-else class="company-table">
           <thead>
@@ -101,6 +107,9 @@ export default {
       showEditModal: false,
       selectedCompanyName: "",
       selectedCompany: null,
+      tryCreateChart: false,
+      isLoading: false,
+      createChartResult: false
     };
   },
   methods: {
@@ -132,7 +141,7 @@ export default {
       try {
         const access_token = localStorage.getItem("access_token");
         const res = await axios.post(
-          "http://localhost:8000/api/search_favorite_company",
+          "http://localhost:8000/api/search_interesting_company",
           {},
           {
             headers: {
@@ -157,7 +166,7 @@ export default {
       try {
         const access_token = localStorage.getItem("access_token");
         const res = await axios.post(
-          "http://localhost:8000/api/create_favorite_company",
+          "http://localhost:8000/api/create_interesting_company",
           payload,
           {
             headers: {
@@ -181,7 +190,7 @@ export default {
       try {
         const access_token = localStorage.getItem("access_token");
         const res = await axios.post(
-          "http://localhost:8000/api/update_favorite_company_industry_period",
+          "http://localhost:8000/api/update_interesting_company_industry_period",
           updatedInfo,
           {
             headers: {
@@ -205,7 +214,7 @@ export default {
       try {
         const access_token = localStorage.getItem("access_token");
         const res = await axios.post(
-          "http://localhost:8000/api/delete_favorite_company",
+          "http://localhost:8000/api/delete_interesting_company",
           { company_name: this.selectedCompanyName },
           {
             headers: {
@@ -222,10 +231,15 @@ export default {
 
     async generateGraph() {
         try {
+            this.tryCreateChart = true
+            this.isLoading = true
             const res = await axios.post(
-                "http://localhost:8000/api/make_stock_monitoring_chart"
+                "http://localhost:8000/api/create_stock_monitoring_chart"
             );
-            console.log("success request")
+            this.isLoading = false
+            if (res.data != null && res.data.status == "error") {
+                this.createChartResult = true
+            }
         } catch (error) {
             console.error("Delete failed:", error);
         }

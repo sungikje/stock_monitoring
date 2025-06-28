@@ -12,8 +12,6 @@ import shutil
 
 # Project import
 from backend.db.connection import get_pool
-from backend.models.user import UserSearchUseEmail
-from backend.services.user_service import find_user_by_email
 from backend.models.stock import (
     StockInfoResponse,
     SearchFavoriteCompany,
@@ -61,18 +59,11 @@ def search_company_not_use_contains(name: str) -> StockInfoResponse:
 
 
 @log_call
-async def search_user_favorite_company(
-    user_email: str,
-) -> List[SearchFavoriteCompany]:
+async def search_user_interesting_company() -> List[SearchFavoriteCompany]:
     pool = get_pool()
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
-            user_response = await find_user_by_email(user_email)
-
-            await cur.execute(
-                "SELECT * FROM user_favorite_companies WHERE user_id = %s",
-                (user_response.id,),
-            )
+            await cur.execute("SELECT * FROM user_interesting_companies_alone_table")
             favorite_rows = await cur.fetchall()
 
             favorite_companies = [SearchFavoriteCompany(**row) for row in favorite_rows]
@@ -81,13 +72,13 @@ async def search_user_favorite_company(
 
 
 @log_call
-async def delete_favorite_company(user_id: str, company_info: CompanyInfo):
+async def delete_interesting_company(user_id: str, company_info: CompanyInfo):
     pool = get_pool()
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
             await cur.execute(
-                "DELETE FROM user_favorite_companies WHERE user_id = %s AND company_name = %s",
-                (user_id, company_info.company_name),
+                "SELECT * FROM user_interesting_companies_alone_table WHERE company_name = %s",
+                (company_info.company_name),
             )
 
             delete_tf = await cur.fetchall()
@@ -95,22 +86,22 @@ async def delete_favorite_company(user_id: str, company_info: CompanyInfo):
                 return {"status": "error", "message": "fail find favorite company"}
 
             await cur.execute(
-                "DELETE FROM user_favorite_companies WHERE user_id = %s AND company_name = %s",
-                (user_id, company_info.company_name),
+                "DELETE FROM user_interesting_companies_alone_table WHERE company_name = %s",
+                (company_info.company_name),
             )
             await conn.commit()
             return {"status": "success"}
 
 
 @log_call
-async def create_favorite_company(user_id: str, create_info_list: List[CompanyInfo]):
+async def create_interesting_company(user_id: str, create_info_list: List[CompanyInfo]):
     pool = get_pool()
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
             for company_info in create_info_list:
                 await cur.execute(
-                    "SELECT * FROM user_favorite_companies WHERE user_id = %s AND company_name = %s",
-                    (user_id, company_info.company_name),
+                    "SELECT * FROM user_interesting_companies_alone_table WHERE company_name = %s",
+                    (company_info.company_name),
                 )
 
                 delete_tf = await cur.fetchall()
@@ -118,26 +109,24 @@ async def create_favorite_company(user_id: str, create_info_list: List[CompanyIn
                     return {"status": "error", "message": "already exist company list"}
 
                 await cur.execute(
-                    "INSERT INTO user_favorite_companies (user_id, company_name, industry_period, base_price) VALUES (%s, %s, 2, 50000)",
-                    (user_id, company_info.company_name),
+                    "INSERT INTO user_interesting_companies_alone_table (company_name, industry_period) VALUES (%s, 2)",
+                    (company_info.company_name),
                 )
             await conn.commit()
             return {"status": "success"}
 
 
 @log_call
-async def update_favorite_company_industry_period(
-    user_email: UserSearchUseEmail, update_info: UpdateIndustryInfo
+async def update_interesting_company_industry_period(
+    update_info: UpdateIndustryInfo
 ):
-    user_response = await find_user_by_email(user_email)
     pool = get_pool()
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
             await cur.execute(
-                "UPDATE user_favorite_companies SET industry_period = %s WHERE user_id = %s AND company_name = %s",
+                "UPDATE user_interesting_companies_alone_table SET industry_period = %s WHERE company_name = %s",
                 (
                     update_info.industry_period,
-                    user_response.id,
                     update_info.company_name,
                 ),
             )
@@ -145,10 +134,10 @@ async def update_favorite_company_industry_period(
             return {"status": "success"}
 
 @log_call
-async def make_stock_moniotring_chart():
+async def create_stock_moniotring_chart():
     today = datetime.today().strftime("%Y-%m-%d")
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    save_path = os.path.join(BASE_DIR, STOCK_CHART_PATH, str(today), str(1))
+    save_path = os.path.join(BASE_DIR, STOCK_CHART_PATH, str(today))
 
     file_names = []
     try:
@@ -162,7 +151,7 @@ async def make_stock_moniotring_chart():
     except Exception as e:
         print(f"오류 발생: {e}")
 
-    search_favorite_companies = await search_user_favorite_company("admin@example.com")
+    search_favorite_companies = await search_user_interesting_company()
     favorite_company_list = []
     for company_info in search_favorite_companies:
         favorite_company_list.append(company_info.company_name)
@@ -170,18 +159,18 @@ async def make_stock_moniotring_chart():
 
     for name in file_names:
         favorite_company_list.remove(name)
-    
+
     if len(favorite_company_list) != 0:
-        await make_stock_charts()
+        await create_stock_charts()
     else:
         print("already exist")
+        return {"status": "error", "message": "already exist"}
 
 
 @log_call
-async def get_view_chart(user_email: UserSearchUseEmail) -> List[ViewChart]:
+async def get_view_chart() -> List[ViewChart]:
     today = datetime.today().strftime("%Y-%m-%d")
-    user = await find_user_by_email(user_email)
-    chart_path = os.path.join(BASE_DIR, STOCK_CHART_PATH, today, str(user.id))
+    chart_path = os.path.join(BASE_DIR, STOCK_CHART_PATH, today)
 
     chart_list: List[ViewChart] = []
 
@@ -189,10 +178,10 @@ async def get_view_chart(user_email: UserSearchUseEmail) -> List[ViewChart]:
         return chart_list 
 
     for file in os.listdir(chart_path):
-        real_file_path = os.path.join(BASE_DIR, STOCK_CHART_PATH, today, str(user.id), file)
+        real_file_path = os.path.join(BASE_DIR, STOCK_CHART_PATH, today, file)
         if os.path.isfile(real_file_path):
             name, _ = os.path.splitext(file)
-            static_file_path = f"/{STOCK_CHART_PATH}/{today}/{user.id}/{file}"
+            static_file_path = f"/{STOCK_CHART_PATH}/{today}/{file}"
             chart = ViewChart(company_name=name, save_path=static_file_path)
             chart_list.append(chart)
 
@@ -200,18 +189,14 @@ async def get_view_chart(user_email: UserSearchUseEmail) -> List[ViewChart]:
 
 
 @log_call
-async def find_user_favorite_company_stock_info(
-    user_email: UserSearchUseEmail,
-) -> List[ViewChart]:
-    user_favorite_company_list = await search_user_favorite_company(user_email)
-    user_info = await find_user_by_email(user_email)
+async def find_user_favorite_company_stock_info() -> List[ViewChart]:
+    user_interesting_company_list = await search_user_interesting_company()
     view_charts = []
 
-    for company_info in user_favorite_company_list:
+    for company_info in user_interesting_company_list:
         # need company code
         company_other_info = search_company_not_use_contains(company_info.company_name)
         temp = view_chart(
-            user_info.id,
             company_other_info.code,
             company_info.company_name,
             company_info.industry_period,
@@ -234,26 +219,18 @@ def is_today_chart_exist() -> bool:
 
 
 @log_call
-async def make_stock_charts():
+async def create_stock_charts():
     pool = get_pool()
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
-            await cur.execute("SELECT DISTINCT user_id FROM user_favorite_companies")
-            user_list = await cur.fetchall()
-    
-    for user in user_list:
-        async with pool.acquire() as conn:
-            async with conn.cursor(aiomysql.DictCursor) as cur:
-                await cur.execute(
-                    "SELECT * FROM user_favorite_companies WHERE user_id = %s",
-                    (user['user_id'])
-                    )
-        user_favorite_company_info = await cur.fetchall()
+            await cur.execute("SELECT * FROM user_interesting_companies_alone_table")
+    user_favorite_company_info = await cur.fetchall()
 
-        # View Chart Param
-        for vcp in user_favorite_company_info:
-            company_info = search_company_not_use_contains(vcp['company_name'])
-            await view_chart(vcp['user_id'], company_info.code, vcp['company_name'], vcp['industry_period'])
+    # View Chart Param
+    for vcp in user_favorite_company_info:
+        company_info = search_company_not_use_contains(vcp['company_name'])
+        await view_chart(company_info.code, vcp['company_name'], vcp['industry_period'])
+
 
 @log_call
 def clean_stock_charts():
@@ -270,7 +247,7 @@ def clean_stock_charts():
             continue
 
 @log_call
-async def view_chart(user_id, company_code, company_name, industry_period):
+async def view_chart(company_code, company_name, industry_period):
     today = datetime.today().strftime("%Y-%m-%d")
     period = industry_period * 365
     two_year_ago = (datetime.today() - timedelta(days=period)).strftime("%Y-%m-%d")
@@ -357,9 +334,9 @@ async def view_chart(user_id, company_code, company_name, industry_period):
     chart_path = os.path.join(BASE_DIR, STOCK_CHART_PATH)
     os.makedirs(chart_path, exist_ok=True)
 
-    output_dir = os.path.join(BASE_DIR, STOCK_CHART_PATH, str(today), str(user_id))
+    output_dir = os.path.join(BASE_DIR, STOCK_CHART_PATH, str(today))
     os.makedirs(output_dir, exist_ok=True)
-    save_path = os.path.join(BASE_DIR, STOCK_CHART_PATH, str(today), str(user_id), f"{company_name}.png")
+    save_path = os.path.join(BASE_DIR, STOCK_CHART_PATH, str(today), f"{company_name}.png")
 
     plt.savefig(save_path)
     plt.close()

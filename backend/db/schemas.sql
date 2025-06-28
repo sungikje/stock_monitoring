@@ -37,3 +37,11 @@ CREATE TABLE user_favorite_companies (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- user_favorite_companies 테이블 only use alone
+CREATE TABLE user_interesting_companies_alone_table (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    company_name VARCHAR(100) NOT NULL,
+    industry_period SMALLINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
