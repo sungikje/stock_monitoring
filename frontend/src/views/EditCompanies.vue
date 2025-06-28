@@ -38,7 +38,7 @@
       </div> <br /><br /><br />
       <h1>📋 관심 회사 검색</h1>
       <div class="search-section">
-        <input v-model="companyName" type="text" placeholder="회사명 검색" />
+        <input v-model="companyName" type="text" @keyup.enter="searchCompany" placeholder="회사명 검색" />
         <button type="" @click="searchCompany">🔍 검색</button>
         <button type="" @click="addCompany">➕ 추가</button>
       </div>
@@ -114,7 +114,6 @@ export default {
   },
   methods: {
     async searchCompany() {
-        console.log("sibal");
       try {
         const access_token = localStorage.getItem("access_token");
         const res = await axios.post(
