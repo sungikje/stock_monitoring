@@ -9,7 +9,7 @@ venv/*
 *cache*
 
 # chart table
-stock_chart
+stock_graph
 
 # log
 log

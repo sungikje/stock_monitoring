@@ -11,15 +11,15 @@ from contextlib import asynccontextmanager
 from backend.api.endpoints import stock_endpoint
 from backend.db.connection import connect_to_mysql, disconnect_from_mysql
 from backend.config.env import BASE_DIR
-from backend.services.stock_service import is_today_chart_exist, create_stock_charts, clean_stock_charts
+from backend.services.stock_service import is_today_graph_exist, create_stock_graphs, clean_stock_graphs
 
 # if a lot of user? multiprocessing.Pool? Celery async work queue?
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await connect_to_mysql(app)
 
-    if not is_today_chart_exist():
-        await create_stock_charts()
+    if not is_today_graph_exist():
+        await create_stock_graphs()
     
     yield
     await disconnect_from_mysql(app)

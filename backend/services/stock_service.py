@@ -19,7 +19,7 @@ from backend.models.stock import (
     UpdateIndustryInfo,
     ViewChart,
 )
-from backend.config.env import BASE_DIR, STOCK_CHART_PATH
+from backend.config.env import BASE_DIR, STOCK_GRAPH_PATH
 from backend.config.logging import log_call
 
 
@@ -134,10 +134,10 @@ async def update_interesting_company_industry_period(
             return {"status": "success"}
 
 @log_call
-async def create_stock_moniotring_chart():
+async def create_stock_moniotring_graph():
     today = datetime.today().strftime("%Y-%m-%d")
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    save_path = os.path.join(BASE_DIR, STOCK_CHART_PATH, str(today))
+    save_path = os.path.join(BASE_DIR, STOCK_GRAPH_PATH, str(today))
 
     file_names = []
     try:
@@ -161,56 +161,56 @@ async def create_stock_moniotring_chart():
         favorite_company_list.remove(name)
 
     if len(favorite_company_list) != 0:
-        await create_stock_charts()
+        await create_stock_graphs()
     else:
         print("already exist")
         return {"status": "error", "message": "already exist"}
 
 
 @log_call
-async def get_view_chart() -> List[ViewChart]:
+async def get_view_graph() -> List[ViewChart]:
     today = datetime.today().strftime("%Y-%m-%d")
-    chart_path = os.path.join(BASE_DIR, STOCK_CHART_PATH, today)
+    graph_path = os.path.join(BASE_DIR, STOCK_GRAPH_PATH, today)
 
-    chart_list: List[ViewChart] = []
+    graph_list: List[ViewChart] = []
 
-    if not os.path.exists(chart_path):
-        return chart_list 
+    if not os.path.exists(graph_path):
+        return graph_list 
 
-    for file in os.listdir(chart_path):
-        real_file_path = os.path.join(BASE_DIR, STOCK_CHART_PATH, today, file)
+    for file in os.listdir(graph_path):
+        real_file_path = os.path.join(BASE_DIR, STOCK_GRAPH_PATH, today, file)
         if os.path.isfile(real_file_path):
             name, _ = os.path.splitext(file)
-            static_file_path = f"/{STOCK_CHART_PATH}/{today}/{file}"
-            chart = ViewChart(company_name=name, save_path=static_file_path)
-            chart_list.append(chart)
+            static_file_path = f"/{STOCK_GRAPH_PATH}/{today}/{file}"
+            graph = ViewChart(company_name=name, save_path=static_file_path)
+            graph_list.append(graph)
 
-    return chart_list
+    return graph_list
 
 
 @log_call
 async def find_user_favorite_company_stock_info() -> List[ViewChart]:
     user_interesting_company_list = await search_user_interesting_company()
-    view_charts = []
+    view_graphs = []
 
     for company_info in user_interesting_company_list:
         # need company code
         company_other_info = search_company_not_use_contains(company_info.company_name)
-        temp = view_chart(
+        temp = view_graph(
             company_other_info.code,
             company_info.company_name,
             company_info.industry_period,
         )
         if temp != "":
-            view_charts.append(temp)
+            view_graphs.append(temp)
 
-    return view_charts
+    return view_graphs
 
 
 @log_call
-def is_today_chart_exist() -> bool:
+def is_today_graph_exist() -> bool:
     today = datetime.today().strftime("%Y-%m-%d")
-    path_to_check = os.path.join(BASE_DIR, STOCK_CHART_PATH, today)
+    path_to_check = os.path.join(BASE_DIR, STOCK_GRAPH_PATH, today)
 
     if os.path.exists(path_to_check):
         return True
@@ -219,7 +219,7 @@ def is_today_chart_exist() -> bool:
 
 
 @log_call
-async def create_stock_charts():
+async def create_stock_graphs():
     pool = get_pool()
     async with pool.acquire() as conn:
         async with conn.cursor(aiomysql.DictCursor) as cur:
@@ -229,12 +229,12 @@ async def create_stock_charts():
     # View Chart Param
     for vcp in user_favorite_company_info:
         company_info = search_company_not_use_contains(vcp['company_name'])
-        await view_chart(company_info.code, vcp['company_name'], vcp['industry_period'])
+        await view_graph(company_info.code, vcp['company_name'], vcp['industry_period'])
 
 
 @log_call
-def clean_stock_charts():
-    base_path = os.path.join(BASE_DIR, STOCK_CHART_PATH)
+def clean_stock_graphs():
+    base_path = os.path.join(BASE_DIR, STOCK_GRAPH_PATH)
     cutoff = datetime.today() - timedelta(days=7)
 
     for day_folder in os.listdir(base_path):
@@ -247,7 +247,7 @@ def clean_stock_charts():
             continue
 
 @log_call
-async def view_chart(company_code, company_name, industry_period):
+async def view_graph(company_code, company_name, industry_period):
     today = datetime.today().strftime("%Y-%m-%d")
     period = industry_period * 365
     two_year_ago = (datetime.today() - timedelta(days=period)).strftime("%Y-%m-%d")
@@ -331,12 +331,12 @@ async def view_chart(company_code, company_name, industry_period):
     plt.grid(True)
 
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    chart_path = os.path.join(BASE_DIR, STOCK_CHART_PATH)
-    os.makedirs(chart_path, exist_ok=True)
+    graph_path = os.path.join(BASE_DIR, STOCK_GRAPH_PATH)
+    os.makedirs(graph_path, exist_ok=True)
 
-    output_dir = os.path.join(BASE_DIR, STOCK_CHART_PATH, str(today))
+    output_dir = os.path.join(BASE_DIR, STOCK_GRAPH_PATH, str(today))
     os.makedirs(output_dir, exist_ok=True)
-    save_path = os.path.join(BASE_DIR, STOCK_CHART_PATH, str(today), f"{company_name}.png")
+    save_path = os.path.join(BASE_DIR, STOCK_GRAPH_PATH, str(today), f"{company_name}.png")
 
     plt.savefig(save_path)
     plt.close()

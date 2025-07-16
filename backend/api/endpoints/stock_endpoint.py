@@ -10,9 +10,9 @@ from backend.services.stock_service import (
     search_user_interesting_company,
     create_interesting_company,
     delete_interesting_company,
-    get_view_chart,
+    get_view_graph,
     update_interesting_company_industry_period,
-    create_stock_moniotring_chart
+    create_stock_moniotring_graph
 )
 from backend.models.stock import (
     SearchFavoriteCompany,
@@ -48,7 +48,7 @@ async def api_delete_favorite_company(company_info: CompanyInfo):
 @log_call
 @router.post("/stock_monitoring")
 async def api_stock_monitoring() -> List[ViewChart]:
-    return await get_view_chart()
+    return await get_view_graph()
 
 @log_call
 @router.post("/update_interesting_company_industry_period")
@@ -56,6 +56,6 @@ async def api_update_interesting_company_industry_period(update_info: UpdateIndu
     return await update_interesting_company_industry_period(update_info)
 
 @log_call
-@router.post("/create_stock_monitoring_chart")
-async def api_create_stock_monitoring_chart():
-    return await create_stock_moniotring_chart()
+@router.post("/create_stock_monitoring_graph")
+async def api_create_stock_monitoring_graph():
+    return await create_stock_moniotring_graph()
